@@ -153,7 +153,7 @@ export default function CompareTab() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Property type</label>
-                  <Select value={inputs.propertyType} onValueChange={v => update('propertyType', v)}>
+                  <Select value={inputs.propertyType} onValueChange={v => update('propertyType', v as UserInputs['propertyType'])}>
                     <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {PROPERTY_TYPE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
