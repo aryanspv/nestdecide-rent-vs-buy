@@ -7,7 +7,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function ProfileMenu() {
+export type ProfilePage = 'about' | 'permissions' | 'notifications';
+
+interface ProfileMenuProps {
+  onNavigate: (page: ProfilePage) => void;
+}
+
+export default function ProfileMenu({ onNavigate }: ProfileMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -16,21 +22,21 @@ export default function ProfileMenu() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 rounded-xl">
-        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer">
+        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer" disabled>
           <LogIn className="h-4 w-4" />
-          <span>Sign in</span>
+          <span>Sign in <span className="text-[10px] text-muted-foreground ml-1">coming soon</span></span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer">
+        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer" onSelect={() => onNavigate('notifications')}>
           <Bell className="h-4 w-4" />
           <span>Notifications</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer">
+        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer" onSelect={() => onNavigate('permissions')}>
           <Shield className="h-4 w-4" />
           <span>App Permissions</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer">
+        <DropdownMenuItem className="gap-2 py-2.5 cursor-pointer" onSelect={() => onNavigate('about')}>
           <Info className="h-4 w-4" />
           <span>About NestDecide</span>
         </DropdownMenuItem>
