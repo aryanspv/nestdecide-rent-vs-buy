@@ -151,14 +151,72 @@ export default function CompareTab() {
                 </div>
                 <CurrencyInput label="Maintenance/mo" value={inputs.monthlyMaintenance} onChange={v => update('monthlyMaintenance', v)} />
               </div>
+
+              {/* Location & Lifestyle */}
+              <div className="border-t border-border/30 pt-3 mt-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Location & Lifestyle</p>
+              </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Profile</label>
-                <Select value={inputs.userProfile} onValueChange={v => update('userProfile', v as UserInputs['userProfile'])}>
+                <label className="text-sm font-medium text-foreground">Locality / Area</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Koramangala, Bandra West..."
+                  value={inputs.locality}
+                  onChange={(e) => update('locality', e.target.value)}
+                  className="h-10 rounded-xl text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Profile</label>
+                  <Select value={inputs.userProfile} onValueChange={v => update('userProfile', v as UserInputs['userProfile'])}>
+                    <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Property type</label>
+                  <Select value={inputs.propertyType} onValueChange={v => update('propertyType', v as UserInputs['propertyType'])}>
+                    <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Furnishing (if renting)</label>
+                <Select value={inputs.furnishing} onValueChange={v => update('furnishing', v as UserInputs['furnishing'])}>
                   <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    {FURNISHING_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Commute (one-way)</label>
+                <div className="flex items-center gap-3">
+                  <Slider value={[inputs.commuteDistance]} onValueChange={([v]) => update('commuteDistance', v)} min={0} max={50} step={1} className="flex-1" />
+                  <span className="text-sm font-mono font-semibold w-12 text-right">{inputs.commuteDistance}km</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Safety priority</label>
+                  <div className="flex items-center gap-3">
+                    <Slider value={[inputs.safetyPriority]} onValueChange={([v]) => update('safetyPriority', v)} min={1} max={5} step={1} className="flex-1" />
+                    <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[inputs.safetyPriority]}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Resale concern</label>
+                  <div className="flex items-center gap-3">
+                    <Slider value={[inputs.resaleConcern]} onValueChange={([v]) => update('resaleConcern', v)} min={1} max={5} step={1} className="flex-1" />
+                    <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[inputs.resaleConcern]}</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
