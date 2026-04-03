@@ -10,6 +10,8 @@ import VerdictCard from '@/components/VerdictCard';
 import HonestBreakdown from '@/components/HonestBreakdown';
 import { calculate, UserInputs } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LocationInsights from '@/components/LocationInsights';
+import { Input } from '@/components/ui/input';
 import { GitCompareArrows, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 
 const PROFILE_OPTIONS = [
@@ -18,6 +20,22 @@ const PROFILE_OPTIONS = [
   { value: 'family', label: 'Family' },
   { value: 'retired', label: 'Retired' },
 ];
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'independent_house', label: 'Independent House' },
+  { value: 'villa', label: 'Villa' },
+];
+
+const FURNISHING_OPTIONS = [
+  { value: 'unfurnished', label: 'Unfurnished' },
+  { value: 'semi_furnished', label: 'Semi-furnished' },
+  { value: 'fully_furnished', label: 'Fully furnished' },
+];
+
+const PRIORITY_LABELS: Record<number, string> = {
+  1: 'Low', 2: 'Slight', 3: 'Moderate', 4: 'High', 5: 'Critical',
+};
 
 const DEFAULT_INPUTS: UserInputs = {
   city: 'bengaluru',
