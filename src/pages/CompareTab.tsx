@@ -144,7 +144,7 @@ export default function CompareTab() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Profile</label>
-                  <Select value={inputs.userProfile} onValueChange={v => update('userProfile', v)}>
+                  <Select value={inputs.userProfile} onValueChange={v => update('userProfile', v as UserInputs['userProfile'])}>
                     <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
