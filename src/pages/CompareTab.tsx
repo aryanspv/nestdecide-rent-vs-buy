@@ -243,6 +243,7 @@ export default function CompareTab() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
           <VerdictCard result={result} />
           <NetWorthChart snapshots={result.snapshots} plannedStay={inputs.plannedStay} breakEvenYear={result.breakEvenYear} />
+          <LocationInsights result={result} />
           <HonestBreakdown result={result} />
           <div className="text-center pt-1">
             <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">
