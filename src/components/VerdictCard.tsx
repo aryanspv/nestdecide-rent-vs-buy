@@ -1,14 +1,23 @@
 import { CalculationResult } from '@/lib/calculations';
 import { formatINR, formatLakhs } from '@/lib/formatCurrency';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Clock, DollarSign, ArrowRightLeft } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, DollarSign, ArrowRightLeft, MapPin } from 'lucide-react';
 
 interface VerdictCardProps {
   result: CalculationResult;
 }
 
 export default function VerdictCard({ result }: VerdictCardProps) {
-  const { verdictAtTenure, breakEvenYear, netWorthDiffAtTenure, monthlyCashFlowDiff, plannedStay } = result;
+  const {
+    overallVerdict,
+    financialVerdict,
+    breakEvenYear,
+    netWorthDiffAtTenure,
+    monthlyCashFlowDiff,
+    plannedStay,
+    verdictReasons,
+    locationInsight,
+  } = result;
 
   const verdictConfig = {
     BUY: {
@@ -23,8 +32,8 @@ export default function VerdictCard({ result }: VerdictCardProps) {
       tagClass: 'bg-signal-rent text-primary-foreground',
       borderClass: 'border-signal-rent/30',
       headline: breakEvenYear
-        ? `Renting is financially smarter until Year ${breakEvenYear}`
-        : `Renting is financially smarter for this tenure`,
+        ? `Renting is smarter until Year ${breakEvenYear}`
+        : `Renting is smarter for this tenure`,
       icon: TrendingDown,
     },
     NEUTRAL: {
@@ -36,14 +45,18 @@ export default function VerdictCard({ result }: VerdictCardProps) {
     },
   };
 
-  const config = verdictConfig[verdictAtTenure];
+  const config = verdictConfig[overallVerdict];
   const Icon = config.icon;
 
-  const explanation = verdictAtTenure === 'BUY'
+  const explanation = overallVerdict === 'BUY'
     ? `At your planned ${plannedStay}-year tenure, buying leaves you ${formatLakhs(Math.abs(netWorthDiffAtTenure))} wealthier than renting.${breakEvenYear ? ` The break-even happens at Year ${breakEvenYear}.` : ''}`
-    : verdictAtTenure === 'RENT'
+    : overallVerdict === 'RENT'
     ? `At your planned ${plannedStay}-year tenure, renting and investing the difference leaves you ${formatLakhs(Math.abs(netWorthDiffAtTenure))} wealthier.${breakEvenYear ? ` Buying makes more sense only if you stay ${breakEvenYear}+ years.` : ''}`
     : `The numbers are very close. Your decision should factor in lifestyle preferences, job stability, and emotional value of ownership.`;
+
+  // Show if financial and location verdicts conflict
+  const hasConflict = (financialVerdict === 'BUY' && locationInsight.locationScore < 42)
+    || (financialVerdict === 'RENT' && locationInsight.locationScore > 58);
 
   return (
     <motion.div
@@ -52,11 +65,16 @@ export default function VerdictCard({ result }: VerdictCardProps) {
       transition={{ duration: 0.5 }}
       className={`terminal-card border-2 ${config.borderClass} p-6 md:p-8`}
     >
-      {/* Tag */}
-      <div className="flex items-center gap-3 mb-4">
+      {/* Tags */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase ${config.tagClass}`}>
           {config.tag}
         </span>
+        {financialVerdict !== overallVerdict && (
+          <span className="px-3 py-1 rounded-full text-xs font-medium tracking-wider uppercase bg-muted text-muted-foreground">
+            Numbers say {financialVerdict}
+          </span>
+        )}
       </div>
 
       {/* Headline */}
@@ -100,9 +118,30 @@ export default function VerdictCard({ result }: VerdictCardProps) {
       </div>
 
       {/* Explanation */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p className="text-sm text-muted-foreground leading-relaxed mb-3">
         {explanation}
       </p>
+
+      {/* Verdict Reasons */}
+      {verdictReasons.length > 0 && (
+        <div className="border-t border-border pt-3 mt-3 space-y-1">
+          {verdictReasons.map((reason, i) => (
+            <p key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+              <span className="mt-0.5">{i === 0 ? <DollarSign className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}</span>
+              {reason}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Conflict callout */}
+      {hasConflict && (
+        <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+            The numbers and your lifestyle factors point in different directions. We recommend giving extra weight to whichever matters more to you — financial optimization or quality of life.
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

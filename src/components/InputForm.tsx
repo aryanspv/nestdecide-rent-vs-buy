@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { UserInputs } from '@/lib/calculations';
+import { CITY_DATA } from '@/lib/locationData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,18 +8,13 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, HelpCircle, Building2, Wallet, Settings2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, HelpCircle, Building2, Wallet, Settings2, MapPin } from 'lucide-react';
 
-const CITIES = [
-  { value: 'mumbai', label: 'Mumbai', appreciation: '5–7%' },
-  { value: 'delhi', label: 'Delhi NCR', appreciation: '4–6%' },
-  { value: 'bengaluru', label: 'Bengaluru', appreciation: '6–8%' },
-  { value: 'hyderabad', label: 'Hyderabad', appreciation: '7–9%' },
-  { value: 'pune', label: 'Pune', appreciation: '5–7%' },
-  { value: 'chennai', label: 'Chennai', appreciation: '4–6%' },
-  { value: 'ahmedabad', label: 'Ahmedabad', appreciation: '4–6%' },
-  { value: 'other', label: 'Other', appreciation: '4–6%' },
-];
+const CITIES = Object.entries(CITY_DATA).map(([value, data]) => ({
+  value,
+  label: data.label,
+  appreciation: `${data.avgAppreciationRange[0]}–${data.avgAppreciationRange[1]}%`,
+}));
 
 const DEFAULT_INPUTS: UserInputs = {
   city: 'bengaluru',
@@ -34,6 +30,14 @@ const DEFAULT_INPUTS: UserInputs = {
   propertyAppreciation: 6,
   investmentReturn: 12,
   annualRentIncrease: 8,
+  // New defaults
+  locality: '',
+  propertyType: 'apartment',
+  furnishing: 'semi_furnished',
+  userProfile: 'couple',
+  commuteDistance: 10,
+  safetyPriority: 3,
+  resaleConcern: 3,
 };
 
 interface InputFormProps {
@@ -100,9 +104,37 @@ function PercentInput({ label, value, onChange, hint, tooltip }: {
   );
 }
 
+const PROFILE_OPTIONS = [
+  { value: 'bachelor', label: 'Bachelor', desc: 'Single, high mobility' },
+  { value: 'couple', label: 'Couple', desc: 'Dual income, moderate mobility' },
+  { value: 'family', label: 'Family with kids', desc: 'School stability matters' },
+  { value: 'retired', label: 'Retired / Settled', desc: 'Low mobility, settled' },
+];
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'apartment', label: 'Apartment / Flat' },
+  { value: 'independent_house', label: 'Independent House' },
+  { value: 'villa', label: 'Villa / Gated Community' },
+];
+
+const FURNISHING_OPTIONS = [
+  { value: 'unfurnished', label: 'Unfurnished' },
+  { value: 'semi_furnished', label: 'Semi-furnished' },
+  { value: 'fully_furnished', label: 'Fully furnished' },
+];
+
+const PRIORITY_LABELS: Record<number, string> = {
+  1: 'Not important',
+  2: 'Slightly',
+  3: 'Moderate',
+  4: 'Important',
+  5: 'Critical',
+};
+
 const STEPS = [
   { title: 'Your Situation', icon: Wallet, description: 'Income, rent & savings' },
   { title: 'The Property', icon: Building2, description: 'Price, loan & costs' },
+  { title: 'Location & You', icon: MapPin, description: 'Area, lifestyle & profile' },
   { title: 'Assumptions', icon: Settings2, description: 'Appreciation & returns' },
 ];
 
@@ -115,21 +147,25 @@ export default function InputForm({ onCalculate }: InputFormProps) {
   };
 
   const selectedCity = CITIES.find(c => c.value === inputs.city);
+  const cityData = CITY_DATA[inputs.city] ?? CITY_DATA.other;
   const downPaymentPct = inputs.propertyPrice > 0 ? ((inputs.downPayment / inputs.propertyPrice) * 100).toFixed(1) : '0';
+  const stampDutyHint = `Stamp duty: ${cityData.stampDutyPct}% + Registration: ${cityData.registrationPct}% = ₹${((inputs.propertyPrice * (cityData.stampDutyPct + cityData.registrationPct)) / 100 / 100000).toFixed(1)}L extra`;
 
   const handleSubmit = () => {
     onCalculate(inputs);
   };
 
+  const lastStep = STEPS.length - 1;
+
   return (
     <div className="terminal-card p-6 md:p-8">
       {/* Step indicators */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 gap-1">
         {STEPS.map((s, i) => (
           <button
             key={i}
             onClick={() => setStep(i)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
+            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-all text-sm ${
               i === step
                 ? 'bg-primary text-primary-foreground'
                 : i < step
@@ -151,6 +187,7 @@ export default function InputForm({ onCalculate }: InputFormProps) {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
         >
+          {/* Step 0: Situation */}
           {step === 0 && (
             <div className="space-y-5">
               <h2 className="text-xl font-bold text-foreground">Your Situation</h2>
@@ -161,7 +198,7 @@ export default function InputForm({ onCalculate }: InputFormProps) {
                   <SelectContent>
                     {CITIES.map(c => (
                       <SelectItem key={c.value} value={c.value}>
-                        {c.label} <span className="text-muted-foreground ml-1 text-xs">({c.appreciation} avg appreciation)</span>
+                        {c.label} <span className="text-muted-foreground ml-1 text-xs">({c.appreciation} avg)</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -173,10 +210,11 @@ export default function InputForm({ onCalculate }: InputFormProps) {
             </div>
           )}
 
+          {/* Step 1: Property */}
           {step === 1 && (
             <div className="space-y-5">
               <h2 className="text-xl font-bold text-foreground">The Property</h2>
-              <CurrencyInput label="Property price" value={inputs.propertyPrice} onChange={v => update('propertyPrice', v)} />
+              <CurrencyInput label="Property price" value={inputs.propertyPrice} onChange={v => update('propertyPrice', v)} hint={stampDutyHint} />
               <CurrencyInput
                 label="Down payment"
                 value={inputs.downPayment}
@@ -211,12 +249,129 @@ export default function InputForm({ onCalculate }: InputFormProps) {
                 label="Monthly maintenance + society charges"
                 value={inputs.monthlyMaintenance}
                 onChange={v => update('monthlyMaintenance', v)}
-                tooltip="Recurring charges for society maintenance, property tax (monthly share), and repairs."
+                tooltip="Recurring charges for society maintenance, property tax (monthly share), and repairs. We inflate this at 5%/year."
               />
             </div>
           )}
 
+          {/* Step 2: Location & Lifestyle (NEW) */}
           {step === 2 && (
+            <div className="space-y-5">
+              <h2 className="text-xl font-bold text-foreground">Location & You</h2>
+              <p className="text-sm text-muted-foreground -mt-3">These factors shape our recommendation beyond just the numbers.</p>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">
+                  Locality / Area
+                  <InfoTip text="The specific neighborhood or area. This helps us contextualize pricing, safety, and rental market conditions." />
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Koramangala, Whitefield, Bandra West..."
+                  value={inputs.locality}
+                  onChange={(e) => update('locality', e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">Your profile</Label>
+                <Select value={inputs.userProfile} onValueChange={(v) => update('userProfile', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PROFILE_OPTIONS.map(p => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label} <span className="text-muted-foreground ml-1 text-xs">— {p.desc}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {inputs.userProfile === 'bachelor' && cityData.bachelorFriendliness < 3 && (
+                  <p className="text-xs text-amber-500">Heads up: this city has significant bachelor rental discrimination.</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">Property type</Label>
+                <Select value={inputs.propertyType} onValueChange={(v) => update('propertyType', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PROPERTY_TYPE_OPTIONS.map(p => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">Furnishing (if renting)</Label>
+                <Select value={inputs.furnishing} onValueChange={(v) => update('furnishing', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FURNISHING_OPTIONS.map(p => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">
+                  Commute to work (one-way)
+                  <InfoTip text="Distance to your workplace. We estimate commute costs at ₹{cityData.avgCommutePerKmMonthly}/km/month for this city." />
+                </Label>
+                <div className="flex items-center gap-4">
+                  <Slider
+                    value={[inputs.commuteDistance]}
+                    onValueChange={([v]) => update('commuteDistance', v)}
+                    min={0}
+                    max={50}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono text-foreground w-14 text-right">{inputs.commuteDistance} km</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">
+                  How important is neighbourhood safety?
+                  <InfoTip text="High safety priority in lower-safety areas favours gated communities / owned property." />
+                </Label>
+                <div className="flex items-center gap-4">
+                  <Slider
+                    value={[inputs.safetyPriority]}
+                    onValueChange={([v]) => update('safetyPriority', v)}
+                    min={1}
+                    max={5}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono text-foreground w-20 text-right">{PRIORITY_LABELS[inputs.safetyPriority]}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground">
+                  How concerned are you about resale?
+                  <InfoTip text="If you might need to sell quickly (job transfer, emergency), high concern means we factor in liquidity risk and potential price discount." />
+                </Label>
+                <div className="flex items-center gap-4">
+                  <Slider
+                    value={[inputs.resaleConcern]}
+                    onValueChange={([v]) => update('resaleConcern', v)}
+                    min={1}
+                    max={5}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono text-foreground w-20 text-right">{PRIORITY_LABELS[inputs.resaleConcern]}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Assumptions */}
+          {step === 3 && (
             <div className="space-y-5">
               <h2 className="text-xl font-bold text-foreground">Your Assumptions</h2>
               <div className="space-y-1.5">
@@ -272,7 +427,7 @@ export default function InputForm({ onCalculate }: InputFormProps) {
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
 
-        {step < 2 ? (
+        {step < lastStep ? (
           <Button onClick={() => setStep(s => s + 1)} className="gap-1">
             Next <ArrowRight className="h-4 w-4" />
           </Button>

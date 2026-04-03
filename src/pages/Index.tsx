@@ -3,13 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import InputForm from '@/components/InputForm';
 import VerdictCard from '@/components/VerdictCard';
 import NetWorthChart from '@/components/NetWorthChart';
+import LocationInsights from '@/components/LocationInsights';
 import ScenarioTabs from '@/components/ScenarioTabs';
 import HonestBreakdown from '@/components/HonestBreakdown';
 import { UserInputs, CalculationResult, calculate } from '@/lib/calculations';
 import { Building2 } from 'lucide-react';
-
-// Phase 2 will integrate live property price data from MagicBricks/99acres API,
-// RBI home loan rate feeds, and user accounts via Supabase Auth
 
 export default function Index() {
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -20,7 +18,6 @@ export default function Index() {
     setLoading(true);
     setInputs(userInputs);
 
-    // Simulate "modelling" delay for perceived weight
     setTimeout(() => {
       const res = calculate(userInputs);
       setResult(res);
@@ -37,7 +34,7 @@ export default function Index() {
             <Building2 className="h-6 w-6 text-foreground" />
             <h1 className="text-xl font-bold text-foreground tracking-tight">NestDecide</h1>
           </div>
-          <p className="text-xs text-muted-foreground hidden sm:block">India's honest rent vs buy calculator</p>
+          <p className="text-xs text-muted-foreground hidden sm:block">India's most honest rent vs buy calculator</p>
         </div>
       </header>
 
@@ -53,13 +50,14 @@ export default function Index() {
               Should you rent or buy?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              Most calculators compare EMI vs rent. We model the <em>complete</em> financial picture — 
-              opportunity cost, appreciation, taxes, and net worth over 30 years.
+              Most calculators compare EMI vs rent. We model the <em>complete</em> picture —
+              stamp duty, opportunity cost, rental yield, bachelor discrimination, resale risk,
+              and net worth over 30 years.
             </p>
           </motion.div>
         )}
 
-        {/* Input Form (always visible if no result) */}
+        {/* Input Form */}
         {!result && !loading && <InputForm onCalculate={handleCalculate} />}
 
         {/* Loading state */}
@@ -75,7 +73,7 @@ export default function Index() {
                 <div className="h-12 w-12 rounded-full border-4 border-muted border-t-foreground animate-spin" />
               </div>
               <p className="text-sm font-medium text-foreground">Modelling 30-year scenarios...</p>
-              <p className="text-xs text-muted-foreground">Calculating EMI, opportunity cost, tax benefits & net worth trajectory</p>
+              <p className="text-xs text-muted-foreground">Calculating EMI, stamp duty, opportunity cost, location intelligence & net worth trajectory</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -94,6 +92,8 @@ export default function Index() {
               plannedStay={inputs.plannedStay}
               breakEvenYear={result.breakEvenYear}
             />
+
+            <LocationInsights result={result} />
 
             <ScenarioTabs inputs={inputs} />
 
@@ -116,7 +116,7 @@ export default function Index() {
       <footer className="border-t border-border bg-card py-6 mt-8">
         <div className="container max-w-4xl mx-auto px-4 text-center">
           <p className="text-xs text-muted-foreground">
-            NestDecide is a financial modelling tool. This is not financial advice. 
+            NestDecide is a financial modelling tool. This is not financial advice.
             Consult a qualified financial advisor before making property decisions.
           </p>
         </div>
