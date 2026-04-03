@@ -5,7 +5,10 @@ import CitySelector from '@/components/CitySelector';
 import { formatINR, formatLakhs } from '@/lib/formatCurrency';
 import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, IndianRupee, TrendingUp, AlertTriangle, Clock, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import type { UserProfile, PropertyType, Furnishing } from '@/lib/locationData';
 
 interface BuyState {
   city: string;
@@ -16,6 +19,13 @@ interface BuyState {
   monthlyMaintenance: number;
   propertyAppreciation: number;
   monthlyIncome: number;
+  locality: string;
+  userProfile: UserProfile;
+  propertyType: PropertyType;
+  furnishing: Furnishing;
+  commuteDistance: number;
+  safetyPriority: number;
+  resaleConcern: number;
 }
 
 const DEFAULT: BuyState = {
@@ -27,6 +37,36 @@ const DEFAULT: BuyState = {
   monthlyMaintenance: 5000,
   propertyAppreciation: 6,
   monthlyIncome: 150000,
+  locality: '',
+  userProfile: 'couple',
+  propertyType: 'apartment',
+  furnishing: 'semi_furnished',
+  commuteDistance: 10,
+  safetyPriority: 3,
+  resaleConcern: 3,
+};
+
+const PROFILE_OPTIONS = [
+  { value: 'bachelor', label: 'Bachelor' },
+  { value: 'couple', label: 'Couple' },
+  { value: 'family', label: 'Family' },
+  { value: 'retired', label: 'Retired' },
+];
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'independent_house', label: 'Independent House' },
+  { value: 'villa', label: 'Villa' },
+];
+
+const FURNISHING_OPTIONS = [
+  { value: 'unfurnished', label: 'Unfurnished' },
+  { value: 'semi_furnished', label: 'Semi-furnished' },
+  { value: 'fully_furnished', label: 'Fully furnished' },
+];
+
+const PRIORITY_LABELS: Record<number, string> = {
+  1: 'Low', 2: 'Slight', 3: 'Moderate', 4: 'High', 5: 'Critical',
 };
 
 function ResultRow({ label, value, bold, accent }: { label: string; value: string; bold?: boolean; accent?: string }) {
@@ -128,6 +168,73 @@ export default function BuyTab() {
           <CurrencyInput label="Maintenance/mo" value={s.monthlyMaintenance} onChange={v => update('monthlyMaintenance', v)} />
         </div>
 
+        {/* Location & Lifestyle */}
+        <div className="border-t border-border/30 pt-3 mt-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Location & Lifestyle</p>
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-foreground">Locality / Area</label>
+          <Input
+            type="text"
+            placeholder="e.g. Koramangala, Bandra West..."
+            value={s.locality}
+            onChange={(e) => update('locality', e.target.value)}
+            className="h-10 rounded-xl text-sm"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Profile</label>
+            <Select value={s.userProfile} onValueChange={v => update('userProfile', v as UserProfile)}>
+              <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Property type</label>
+            <Select value={s.propertyType} onValueChange={v => update('propertyType', v as PropertyType)}>
+              <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PROPERTY_TYPE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-foreground">Furnishing</label>
+          <Select value={s.furnishing} onValueChange={v => update('furnishing', v as Furnishing)}>
+            <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {FURNISHING_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-foreground">Commute (one-way)</label>
+          <div className="flex items-center gap-3">
+            <Slider value={[s.commuteDistance]} onValueChange={([v]) => update('commuteDistance', v)} min={0} max={50} step={1} className="flex-1" />
+            <span className="text-sm font-mono font-semibold w-12 text-right">{s.commuteDistance}km</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Safety priority</label>
+            <div className="flex items-center gap-3">
+              <Slider value={[s.safetyPriority]} onValueChange={([v]) => update('safetyPriority', v)} min={1} max={5} step={1} className="flex-1" />
+              <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.safetyPriority]}</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">Resale concern</label>
+            <div className="flex items-center gap-3">
+              <Slider value={[s.resaleConcern]} onValueChange={([v]) => update('resaleConcern', v)} min={1} max={5} step={1} className="flex-1" />
+              <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.resaleConcern]}</span>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={() => setShowResults(true)}
           className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
@@ -140,7 +247,7 @@ export default function BuyTab() {
       <AnimatePresence>
         {showResults && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {/* EMI summary — always visible */}
+            {/* EMI summary */}
             <div className="glass-card p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
