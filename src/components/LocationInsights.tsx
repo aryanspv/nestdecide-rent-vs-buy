@@ -134,6 +134,79 @@ export default function LocationInsights({ result, city }: LocationInsightsProps
             <span className="ml-4">Quick-sale discount: <strong className="text-foreground">~{li.liquidity.discountPct}%</strong></span>
           </div>
         </InsightCard>
+
+        {/* Safety & Crime */}
+        <InsightCard icon={Shield} title="Safety & Crime" accent={
+          cd.crimeSafetyGrade === 'A' ? 'text-green-500' : cd.crimeSafetyGrade === 'B' ? 'text-foreground' : cd.crimeSafetyGrade === 'C' ? 'text-amber-500' : 'text-red-500'
+        }>
+          <div className="flex items-center justify-between mb-1">
+            <span>Crime rate</span>
+            <span className="font-mono font-semibold text-foreground">{cd.crimeRatePerLakh}/lakh</span>
+          </div>
+          <div className="flex items-center justify-between mb-1">
+            <span>Safety grade</span>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+              cd.crimeSafetyGrade === 'A' ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' :
+              cd.crimeSafetyGrade === 'B' ? 'bg-blue-500/15 text-blue-500 border-blue-500/30' :
+              cd.crimeSafetyGrade === 'C' ? 'bg-amber-500/15 text-amber-500 border-amber-500/30' :
+              'bg-red-500/15 text-red-500 border-red-500/30'
+            }`}>{cd.crimeSafetyGrade}</span>
+          </div>
+          <p className="text-xs mt-1">Top concerns: {cd.topCrimes.join(', ')}</p>
+          <p className="text-xs mt-1">
+            {cd.crimeSafetyGrade === 'A' ? 'One of the safest Indian metros.' :
+             cd.crimeSafetyGrade === 'B' ? 'Average safety — standard precautions apply.' :
+             cd.crimeSafetyGrade === 'C' ? 'Above-average crime rate. Locality matters — gated communities offer better safety.' :
+             'High crime rate. Choose your locality carefully. Buying in a gated community can significantly improve safety.'}
+          </p>
+        </InsightCard>
+
+        {/* Traffic & Commute */}
+        <InsightCard icon={Car} title="Traffic & Commute" accent={
+          cd.trafficCongestionIndex >= 8 ? 'text-red-500' : cd.trafficCongestionIndex >= 6 ? 'text-amber-500' : 'text-green-500'
+        }>
+          <div className="flex items-center justify-between mb-1">
+            <span>Congestion index</span>
+            <span className="font-mono font-semibold text-foreground">{cd.trafficCongestionIndex}/10</span>
+          </div>
+          <div className="flex items-center justify-between mb-1">
+            <span>Avg commute</span>
+            <span className="font-mono font-semibold text-foreground">{cd.avgCommuteTimeMins} min</span>
+          </div>
+          <div className="flex items-center justify-between mb-1">
+            <span>Peak hour delay</span>
+            <span className="font-mono font-semibold text-foreground">+{cd.peakHourDelayPct}%</span>
+          </div>
+          <p className="text-xs mt-1">
+            {cd.trafficCongestionIndex >= 8
+              ? 'Severe traffic. Buying locks you into a commute — renters can relocate closer to work.'
+              : cd.trafficCongestionIndex >= 6
+              ? 'Moderate congestion. Consider proximity to work when choosing a locality.'
+              : 'Relatively smooth traffic. Commute is less of a factor in your decision.'}
+          </p>
+        </InsightCard>
+
+        {/* Air Quality */}
+        <InsightCard icon={Wind} title="Air Quality (AQI)" accent={
+          cd.avgAQI <= 100 ? 'text-green-500' : cd.avgAQI <= 200 ? 'text-amber-500' : 'text-red-500'
+        }>
+          <div className="flex items-center justify-between mb-1">
+            <span>Avg AQI</span>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+              cd.avgAQI <= 50 ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' :
+              cd.avgAQI <= 100 ? 'bg-green-500/15 text-green-500 border-green-500/30' :
+              cd.avgAQI <= 200 ? 'bg-amber-500/15 text-amber-500 border-amber-500/30' :
+              'bg-red-500/15 text-red-500 border-red-500/30'
+            }`}>{cd.avgAQI} — {cd.aqiCategory}</span>
+          </div>
+          <p className="text-xs mt-1">
+            {cd.avgAQI <= 100
+              ? 'Relatively clean air. Not a major concern for housing decisions.'
+              : cd.avgAQI <= 200
+              ? 'Moderate air quality. Consider apartments with air purification if you have respiratory concerns.'
+              : 'Poor air quality is a health factor. Budget for air purifiers (₹15-40K) and factor in health costs. Buying in green zones can help.'}
+          </p>
+        </InsightCard>
       </div>
 
       {/* Hidden Costs Comparison */}
