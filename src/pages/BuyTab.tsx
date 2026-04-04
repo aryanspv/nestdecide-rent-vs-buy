@@ -282,6 +282,7 @@ export default function BuyTab() {
             <VerdictCard result={result} />
           </div>
           <LocationInsights result={result} />
+          <UniqueInsights result={result} />
           <ShareVerdict targetRef={verdictRef} title="My NestDecide Buy Analysis" />
           <div className="text-center pt-1">
             <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">

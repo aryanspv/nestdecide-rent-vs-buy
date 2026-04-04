@@ -280,6 +280,7 @@ export default function CompareTab() {
           </div>
           <NetWorthChart snapshots={result.snapshots} plannedStay={localInputs.plannedStay} breakEvenYear={result.breakEvenYear} />
           <LocationInsights result={result} />
+          <UniqueInsights result={result} />
           <HonestBreakdown result={result} />
           <ShareVerdict targetRef={verdictRef} title="My NestDecide Comparison" />
           <div className="text-center pt-1">
