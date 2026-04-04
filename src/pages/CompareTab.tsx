@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateCompare, hasBlockingErrors } from '@/lib/validation';
 import { ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
+import { useAiInsights } from '@/hooks/useAiInsights';
 const PROFILE_OPTIONS = [
   { value: 'bachelor', label: 'Bachelor' },
   { value: 'couple', label: 'Couple' },
@@ -68,7 +69,8 @@ export default function CompareTab() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hasCalculated, setHasCalculated] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+  const ai = useAiInsights();
+
 
   const updateLocal = <K extends keyof typeof localInputs>(key: K, val: (typeof localInputs)[K]) =>
     setLocalInputs(prev => ({ ...prev, [key]: val }));
@@ -105,6 +107,9 @@ export default function CompareTab() {
     setTimeout(() => {
       setHasCalculated(true);
       setLoading(false);
+      // Trigger AI insights
+      const calcResult = calculate(fullInputs);
+      ai.fetchInsights(calcResult, shared.city, localInputs.userProfile, shared.monthlyIncome);
     }, 1200);
   };
 
@@ -274,6 +279,9 @@ export default function CompareTab() {
           city={shared.city}
           monthlyIncome={shared.monthlyIncome}
           onModify={() => setHasCalculated(false)}
+          aiInsights={ai.insights}
+          aiLoading={ai.loading}
+          aiError={ai.error}
         />
       )}
     </div>
