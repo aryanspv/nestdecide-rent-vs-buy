@@ -31,7 +31,7 @@ export default function HonestBreakdown({ result }: HonestBreakdownProps) {
   const rentItems = [
     { label: 'Total rent paid over tenure', value: formatLakhs(result.totalRentPaid) },
     { label: 'Security deposit locked', value: formatLakhs(result.rentalDepositLocked) },
-    { label: 'Deposit opportunity cost (returns lost)', value: formatLakhs(result.rentalDepositOpportunityCost) },
+    
     { label: 'Brokerage — rent side', value: formatINR(result.brokerageRentCost) },
   ];
 

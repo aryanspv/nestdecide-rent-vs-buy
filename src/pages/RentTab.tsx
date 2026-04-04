@@ -104,7 +104,7 @@ export default function RentTab({ onNavigate }: RentTabProps) {
     <div className="space-y-5 pb-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">Renting Smart</h1>
-        <p className="text-sm text-muted-foreground mt-1">Understand your rent costs & investment potential</p>
+        <p className="text-sm text-muted-foreground mt-1">Understand your rent costs & affordability</p>
       </div>
 
       <div className="glass-card p-4 space-y-3">

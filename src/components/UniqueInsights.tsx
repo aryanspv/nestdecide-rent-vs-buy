@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { formatINR } from '@/lib/formatCurrency';
 import type { CalculationResult } from '@/lib/calculations';
-import { Shield, AlertTriangle, Clock, Wallet, Target, Home, TrendingUp } from 'lucide-react';
+import { Shield, AlertTriangle, Wallet, Target, Home } from 'lucide-react';
 
 interface UniqueInsightsProps {
   result: CalculationResult;

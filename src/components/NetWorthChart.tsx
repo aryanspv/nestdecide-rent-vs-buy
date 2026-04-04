@@ -136,7 +136,7 @@ export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }:
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: 'hsl(152, 60%, 45%)' }} />
-          If you rent & invest
+          If you rent
         </div>
         {breakEvenYear && (
           <div className="flex items-center gap-2">

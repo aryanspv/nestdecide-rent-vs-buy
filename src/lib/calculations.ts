@@ -452,7 +452,7 @@ export function calculate(inputs: UserInputs): CalculationResult {
   if (financialVerdict === 'BUY') {
     verdictReasons.push('Financially, buying builds more wealth at your planned tenure');
   } else if (financialVerdict === 'RENT') {
-    verdictReasons.push('Financially, renting and investing the difference builds more wealth');
+    verdictReasons.push('Financially, renting is the better option at this tenure');
   } else {
     verdictReasons.push('Financially, it\'s a close call — the numbers are within 2% of property value');
   }
