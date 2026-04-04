@@ -53,6 +53,23 @@ const CITY_LOCALITIES: Record<string, LocalityProfile[]> = {
       summary: 'A budget-led market where affordability is the main story; buy decisions hinge more on building quality and livability than prestige or premium appreciation.',
     },
     {
+      canonicalName: 'Burari',
+      aliases: ['burari', 'buradi'],
+      zone: 'North Delhi fringe',
+      segment: 'affordable',
+      vibe: 'fast-growing peripheral colony belt with mixed plotted stock, unauthorized pockets and uneven civic upkeep',
+      dominantTenantProfile: 'budget families, local traders and first-time buyers stretching for ownership',
+      priceToRentPressure: 'balanced',
+      appreciationOutlook: 'patchy',
+      liquidity: 'weaker',
+      safety: 'mixed',
+      commute: 'road-led connectivity to north and central Delhi exists, but choke points and weak last-mile quality make daily reliability inconsistent',
+      infraCatalysts: ['outer north Delhi expansion', 'relative affordability versus central Delhi', 'buyer demand from budget upgraders'],
+      risks: ['unauthorized or non-uniform stock in some pockets', 'civic infrastructure gaps', 'weaker resale depth', 'congestion on approach roads'],
+      betterValueAlternatives: ['Rohini Sector 24', 'Mukherjee Nagar', 'Dilshad Garden'],
+      summary: 'An affordability-driven fringe market where low entry price attracts first-time buyers, but execution risk sits in legality, stock quality and resale depth rather than headline pricing.',
+    },
+    {
       canonicalName: 'Dwarka',
       aliases: ['dwarka'],
       zone: 'South West Delhi',
@@ -197,6 +214,26 @@ export function getLocalityProfile(city: string, locality: string) {
         risks: ['very low rental yield', 'high entry ticket'],
         betterValueAlternatives: ['Jangpura', 'Mayur Vihar Phase 1'],
         summary: 'This looks like a prestige-led Delhi micro-market where liveability is high but buy economics are usually unforgiving.',
+        matchConfidence: 'medium' as const,
+      };
+    }
+
+    if (/(burari|sant nagar|mukundpur|kaushik enclave)/.test(normalizedLocality)) {
+      return {
+        canonicalName: locality,
+        zone: 'North Delhi fringe affordability market',
+        segment: 'affordable',
+        vibe: 'peripheral value-led housing market with uneven stock quality and civic consistency',
+        dominantTenantProfile: 'budget families and first-time buyers',
+        priceToRentPressure: 'balanced',
+        appreciationOutlook: 'patchy',
+        liquidity: 'weaker',
+        safety: 'mixed',
+        commute: 'connectivity exists, but approach-road congestion and last-mile quality often reduce convenience',
+        infraCatalysts: ['affordability', 'north Delhi spillover demand'],
+        risks: ['title and stock-quality variability', 'uneven civic infrastructure', 'slower resale depth'],
+        betterValueAlternatives: ['Rohini Sector 24', 'Mukherjee Nagar'],
+        summary: 'This looks like a fringe affordability market where the right block can work, but weak stock and resale quality can punish a rushed buyer.',
         matchConfidence: 'medium' as const,
       };
     }
