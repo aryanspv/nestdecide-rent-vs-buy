@@ -31,7 +31,7 @@ export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }:
       <div className="flex items-start justify-between mb-1">
         <div>
           <h3 className="text-lg font-bold text-foreground">Net Worth Trajectory</h3>
-          <p className="text-sm text-muted-foreground mb-6">30-year comparison: buying vs renting & investing</p>
+          <p className="text-sm text-muted-foreground mb-6">30-year comparison: buying vs renting</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <label className="text-xs text-muted-foreground cursor-pointer" htmlFor="real-toggle">
@@ -136,7 +136,7 @@ export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }:
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: 'hsl(152, 60%, 45%)' }} />
-          If you rent & invest
+          If you rent
         </div>
         {breakEvenYear && (
           <div className="flex items-center gap-2">

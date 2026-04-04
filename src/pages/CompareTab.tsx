@@ -179,7 +179,7 @@ export default function CompareTab() {
                 <PercentInput label="Appreciation" value={localInputs.propertyAppreciation} onChange={v => updateLocal('propertyAppreciation', v)} hint={`${cityData.avgAppreciationRange[0]}-${cityData.avgAppreciationRange[1]}%`} />
               </div>
               <div className="grid grid-cols-2 gap-2.5">
-                <PercentInput label="Investment return" value={localInputs.investmentReturn} onChange={v => updateLocal('investmentReturn', v)} hint="12-14%" />
+                
                 <PercentInput label="Rent hike/yr" value={localInputs.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} />
               </div>
               <div className="grid grid-cols-2 gap-2.5">

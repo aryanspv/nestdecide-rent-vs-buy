@@ -399,13 +399,6 @@ export default function InputForm({ onCalculate }: InputFormProps) {
                 tooltip="How much you expect the property value to increase each year. Be realistic — past performance varies by micro-market."
               />
               <PercentInput
-                label="Expected investment return (if you don't buy)"
-                value={inputs.investmentReturn}
-                onChange={v => update('investmentReturn', v)}
-                hint="Nifty 50 historical avg: 12–14%"
-                tooltip="If you don't buy, you'd invest your down payment and EMI savings. What annual return do you expect? Index funds have returned 12-14% historically."
-              />
-              <PercentInput
                 label="Annual rent increase"
                 value={inputs.annualRentIncrease}
                 onChange={v => update('annualRentIncrease', v)}

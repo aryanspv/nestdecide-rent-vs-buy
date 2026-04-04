@@ -51,7 +51,7 @@ export default function VerdictCard({ result }: VerdictCardProps) {
   const explanation = overallVerdict === 'BUY'
     ? `At your planned ${plannedStay}-year tenure, buying leaves you ${formatLakhs(Math.abs(netWorthDiffAtTenure))} wealthier than renting.${breakEvenYear ? ` The break-even happens at Year ${breakEvenYear}.` : ''}`
     : overallVerdict === 'RENT'
-    ? `At your planned ${plannedStay}-year tenure, renting and investing the difference leaves you ${formatLakhs(Math.abs(netWorthDiffAtTenure))} wealthier.${breakEvenYear ? ` Buying makes more sense only if you stay ${breakEvenYear}+ years.` : ''}`
+    ? `At your planned ${plannedStay}-year tenure, renting saves you ${formatLakhs(Math.abs(netWorthDiffAtTenure))} compared to buying.${breakEvenYear ? ` Buying makes more sense only if you stay ${breakEvenYear}+ years.` : ''}`
     : `The numbers are very close. Your decision should factor in lifestyle preferences, job stability, and emotional value of ownership.`;
 
   // Show if financial and location verdicts conflict

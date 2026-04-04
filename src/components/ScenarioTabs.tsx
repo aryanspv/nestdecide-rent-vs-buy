@@ -18,13 +18,11 @@ export default function ScenarioTabs({ inputs }: ScenarioTabsProps) {
     pessimistic: calculate({
       ...inputs,
       propertyAppreciation: inputs.propertyAppreciation - 2,
-      investmentReturn: inputs.investmentReturn + 2,
     }),
     realistic: calculate(inputs),
     optimistic: calculate({
       ...inputs,
       propertyAppreciation: inputs.propertyAppreciation + 2,
-      investmentReturn: inputs.investmentReturn - 2,
     }),
   };
 
@@ -61,9 +59,9 @@ export default function ScenarioTabs({ inputs }: ScenarioTabsProps) {
             <div className="bg-muted rounded-lg p-4 mb-4">
               <p className="text-sm text-foreground font-medium">{scenarioLabel(result)}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {key === 'pessimistic' && `Property: ${inputs.propertyAppreciation - 2}%, Investment: ${inputs.investmentReturn + 2}%`}
-                {key === 'realistic' && `Property: ${inputs.propertyAppreciation}%, Investment: ${inputs.investmentReturn}%`}
-                {key === 'optimistic' && `Property: ${inputs.propertyAppreciation + 2}%, Investment: ${inputs.investmentReturn - 2}%`}
+                {key === 'pessimistic' && `Property appreciation: ${inputs.propertyAppreciation - 2}%`}
+                {key === 'realistic' && `Property appreciation: ${inputs.propertyAppreciation}%`}
+                {key === 'optimistic' && `Property appreciation: ${inputs.propertyAppreciation + 2}%`}
               </p>
             </div>
             <NetWorthChart

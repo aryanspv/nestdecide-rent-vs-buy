@@ -20,7 +20,7 @@ export default function HonestBreakdown({ result }: HonestBreakdownProps) {
     { label: 'Total transaction cost (day-1 hidden cost)', value: formatLakhs(result.totalTransactionCost) },
     { label: 'Total maintenance + society charges', value: formatLakhs(result.totalMaintenanceCost) },
     { label: 'Property tax (cumulative)', value: formatLakhs(result.propertyTaxTotal) },
-    { label: 'Down payment opportunity cost', value: formatLakhs(result.downPaymentOpportunityCost) },
+    
     { label: 'Tax benefit (Sec 80C — principal)', value: formatLakhs(result.taxBenefit80C) },
     { label: 'Tax benefit (Sec 24B — interest)', value: formatLakhs(result.taxBenefit24B) },
     { label: 'Total estimated tax benefit', value: formatLakhs(result.totalTaxBenefit) },
@@ -31,7 +31,7 @@ export default function HonestBreakdown({ result }: HonestBreakdownProps) {
   const rentItems = [
     { label: 'Total rent paid over tenure', value: formatLakhs(result.totalRentPaid) },
     { label: 'Security deposit locked', value: formatLakhs(result.rentalDepositLocked) },
-    { label: 'Deposit opportunity cost (returns lost)', value: formatLakhs(result.rentalDepositOpportunityCost) },
+    
     { label: 'Brokerage — rent side', value: formatINR(result.brokerageRentCost) },
   ];
 

@@ -7,7 +7,7 @@ import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateRent, hasBlockingErrors } from '@/lib/validation';
-import { Wallet, TrendingUp, Receipt, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react';
+import { Wallet, Receipt, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react';
 import type { TabId } from '@/components/BottomNav';
 
 interface RentTabProps {
@@ -16,7 +16,6 @@ interface RentTabProps {
 
 interface RentLocalState {
   annualRentIncrease: number;
-  investmentReturn: number;
   years: number;
 }
 
@@ -43,7 +42,6 @@ export default function RentTab({ onNavigate }: RentTabProps) {
   const shared = useUserData();
   const [local, setLocal] = useState<RentLocalState>({
     annualRentIncrease: 8,
-    investmentReturn: 12,
     years: 10,
   });
   const [showResults, setShowResults] = useState(false);
@@ -80,22 +78,11 @@ export default function RentTab({ onNavigate }: RentTabProps) {
 
     const securityDeposit = shared.monthlyRent * cityData.avgRentDepositMonths;
     const brokerage = shared.monthlyRent * cityData.brokerageRentMonths;
-    const investmentCorpus = shared.savings * Math.pow(1 + local.investmentReturn / 100, local.years);
-    const monthlySurplus = Math.max(0, shared.monthlyIncome - shared.monthlyRent - shared.monthlyIncome * 0.4);
-
-    let sipCorpus = 0;
-    const monthlyReturn = local.investmentReturn / 100 / 12;
-    for (let m = 1; m <= local.years * 12; m++) {
-      sipCorpus = (sipCorpus + monthlySurplus) * (1 + monthlyReturn);
-    }
-
-    const totalWealth = investmentCorpus + sipCorpus;
     const rentAtEnd = shared.monthlyRent * Math.pow(1 + local.annualRentIncrease / 100, local.years);
 
     return {
       rentToIncome, maxAffordableRent, affordabilityVerdict,
-      totalRent, securityDeposit, brokerage,
-      investmentCorpus, monthlySurplus, sipCorpus, totalWealth, rentAtEnd,
+      totalRent, securityDeposit, brokerage, rentAtEnd,
     };
   }, [shared, local, cityData]);
 
@@ -117,7 +104,7 @@ export default function RentTab({ onNavigate }: RentTabProps) {
     <div className="space-y-5 pb-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">Renting Smart</h1>
-        <p className="text-sm text-muted-foreground mt-1">Understand your rent costs & investment potential</p>
+        <p className="text-sm text-muted-foreground mt-1">Understand your rent costs & affordability</p>
       </div>
 
       <div className="glass-card p-4 space-y-3">
@@ -136,10 +123,7 @@ export default function RentTab({ onNavigate }: RentTabProps) {
           <CurrencyInput label="Current savings" value={shared.savings} onChange={v => updateShared('savings', v)} />
           <FieldError error={errors.savings} />
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <PercentInput label="Rent hike/yr" value={local.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} hint="5-10%" />
-          <PercentInput label="Investment return" value={local.investmentReturn} onChange={v => updateLocal('investmentReturn', v)} hint="12-14%" />
-        </div>
+        <PercentInput label="Rent hike/yr" value={local.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} hint="5-10%" />
         <div className="space-y-1">
           <label className="text-sm font-medium text-foreground">Time horizon</label>
           <div className="flex items-center gap-3">
@@ -237,34 +221,6 @@ export default function RentTab({ onNavigate }: RentTabProps) {
               </AnimatePresence>
             </div>
 
-            {/* Investment Tracker */}
-            <div className="glass-card overflow-hidden">
-              <button onClick={() => toggleSection('invest')} className="w-full p-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4" /> Rent & Invest
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono font-bold text-primary">{formatLakhs(analysis.totalWealth)}</span>
-                  {expandedSection === 'invest' ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-              <AnimatePresence>
-                {expandedSection === 'invest' && (
-                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 space-y-0.5">
-                      <ResultRow label="Savings grow to" value={formatLakhs(analysis.investmentCorpus)} />
-                      <ResultRow label="Monthly SIP surplus" value={formatINR(analysis.monthlySurplus)} />
-                      <ResultRow label="SIP corpus" value={formatLakhs(analysis.sipCorpus)} />
-                      <div className="border-t border-border/30 my-1" />
-                      <ResultRow label="Total projected wealth" value={formatLakhs(analysis.totalWealth)} bold />
-                      <p className="text-[11px] text-muted-foreground mt-2">
-                        Lump sum + SIP at {local.investmentReturn}% for {local.years}yr
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
