@@ -405,6 +405,7 @@ export function calculate(inputs: UserInputs): CalculationResult {
 
     const rentNetWorth = rentInvestmentCorpus + rentalDepositLocked; // deposit is returned eventually
 
+    const inflationDeflator = Math.pow(1.06, year);
     snapshots.push({
       year,
       buyNetWorth,
@@ -415,6 +416,8 @@ export function calculate(inputs: UserInputs): CalculationResult {
       totalRentPaid,
       totalEmiPaid,
       rentInvestmentCorpus,
+      buyNetWorthReal: buyNetWorth / inflationDeflator,
+      rentNetWorthReal: rentNetWorth / inflationDeflator,
     });
 
     // Check crossover
