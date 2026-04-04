@@ -1,7 +1,8 @@
 import { CalculationResult } from '@/lib/calculations';
+import { getCityData } from '@/lib/locationData';
 import { formatINR, formatLakhs } from '@/lib/formatCurrency';
 import { motion } from 'framer-motion';
-import { MapPin, Shield, Users, TrendingUp, AlertTriangle, Home, Banknote } from 'lucide-react';
+import { MapPin, Shield, Users, TrendingUp, AlertTriangle, Home, Banknote, Car, Wind } from 'lucide-react';
 
 interface LocationInsightsProps {
   result: CalculationResult;
