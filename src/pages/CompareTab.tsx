@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateCompare, hasBlockingErrors } from '@/lib/validation';
 import { ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
+import { useAiInsights } from '@/hooks/useAiInsights';
 const PROFILE_OPTIONS = [
   { value: 'bachelor', label: 'Bachelor' },
   { value: 'couple', label: 'Couple' },
