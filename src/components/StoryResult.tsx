@@ -209,7 +209,7 @@ export default function StoryResult({ result, profile, city, monthlyIncome, onMo
               Location & Lifestyle Intelligence
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-5">
-              <LocationInsights result={result} />
+              <LocationInsights result={result} city={city} />
             </AccordionContent>
           </AccordionItem>
 
