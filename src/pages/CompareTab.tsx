@@ -1,23 +1,17 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CurrencyInput, PercentInput } from '@/components/FormField';
 import CitySelector from '@/components/CitySelector';
 import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import NetWorthChart from '@/components/NetWorthChart';
-import VerdictCard from '@/components/VerdictCard';
-import HonestBreakdown from '@/components/HonestBreakdown';
 import { calculate, UserInputs } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import LocationInsights from '@/components/LocationInsights';
-import ShareVerdict from '@/components/ShareVerdict';
-import UniqueInsights from '@/components/UniqueInsights';
+import StoryResult from '@/components/StoryResult';
 import { Input } from '@/components/ui/input';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateCompare, hasBlockingErrors } from '@/lib/validation';
-import { GitCompareArrows, ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
-
+import { ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
 const PROFILE_OPTIONS = [
   { value: 'bachelor', label: 'Bachelor' },
   { value: 'couple', label: 'Couple' },
@@ -74,7 +68,7 @@ export default function CompareTab() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hasCalculated, setHasCalculated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const verdictRef = useRef<HTMLDivElement>(null);
+  
 
   const updateLocal = <K extends keyof typeof localInputs>(key: K, val: (typeof localInputs)[K]) =>
     setLocalInputs(prev => ({ ...prev, [key]: val }));
@@ -272,23 +266,15 @@ export default function CompareTab() {
         )}
       </AnimatePresence>
 
-      {/* Results */}
+      {/* Results — Story Mode */}
       {result && !loading && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          <div ref={verdictRef}>
-            <VerdictCard result={result} />
-          </div>
-          <NetWorthChart snapshots={result.snapshots} plannedStay={localInputs.plannedStay} breakEvenYear={result.breakEvenYear} />
-          <LocationInsights result={result} />
-          <UniqueInsights result={result} />
-          <HonestBreakdown result={result} />
-          <ShareVerdict targetRef={verdictRef} title="My NestDecide Comparison" />
-          <div className="text-center pt-1">
-            <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">
-              ← Modify inputs
-            </button>
-          </div>
-        </motion.div>
+        <StoryResult
+          result={result}
+          profile={localInputs.userProfile}
+          city={shared.city}
+          monthlyIncome={shared.monthlyIncome}
+          onModify={() => setHasCalculated(false)}
+        />
       )}
     </div>
   );

@@ -1,62 +1,55 @@
 
+# NestDecide UX Upgrade — Focused Build
 
-# Unique Insights — Features No Other Calculator Has
+## Scope: 3 features, no live API calls
 
-## What already exists
-- Rental yield analysis, bachelor discrimination score, resale liquidity risk, mobility score, hidden costs breakdown, location score gauge
+### 1. Onboarding Wizard (Home Tab)
+Replace the static Home tab with a 3-step guided flow:
+1. **City picker** — large tap-friendly city cards with illustrations
+2. **Quick numbers** — Monthly rent + income + savings (3 fields)
+3. **Intent** — "Thinking of buying?" → routes to Compare tab; "Just exploring rent?" → Rent tab
 
-## 7 New Insights (ranked by uniqueness)
+Pre-fills shared context via `UserDataContext` so other tabs have data ready. Animated step transitions with Framer Motion. Progress dots at top.
 
-### 1. EMI Stress Test Timeline
-Show what happens to the user's EMI burden under real scenarios: job loss (3-6 month buffer check), interest rate hike (+1-2%), income stagnation. Display a "months of runway" number — how many months they can survive on savings if income stops. No Indian calculator visualizes this.
+**Files:** Rewrite `src/pages/HomeTab.tsx`, update `src/contexts/UserDataContext.tsx` if needed.
 
-**Engine addition**: Calculate `emergencyRunwayMonths = savings / (emi + maintenance)`, stress-test EMI at +1% and +2% rates, show the delta.
+### 2. Story-Mode Results
+Refactor the results section (in CompareTab primarily) from a wall of cards into a narrative scroll:
+1. **Hero verdict** — Large animated verdict ("RENT" or "BUY") with count-up number showing savings difference
+2. **"Here's why"** — 2-3 top reasons with icons, staggered fade-in
+3. **Chart** — existing NetWorthChart (keep as-is)
+4. **"What surprised us"** — highlight the single most unexpected insight
+5. **Deep dive** — existing insight cards, collapsible accordion
 
-### 2. Rent Trap Detector
-Calculate the year when cumulative rent paid exceeds total transaction cost of buying (stamp duty + registration + brokerage). Before that year, renting is "free" relative to sunk buy costs. After it, every month of rent is money that could have gone to equity. Show: "You'll pay more in rent than buying costs by Year X."
+New components:
+- `src/components/AnimatedNumber.tsx` — count-up effect for key metrics
+- `src/components/StoryResult.tsx` — orchestrates the narrative sections
 
-**Engine addition**: Simple loop — find year where `totalRentPaid > totalTransactionCost`. Display as a timeline marker on the chart.
+Integrate into `CompareTab.tsx` results area.
 
-### 3. Real Inflation-Adjusted Verdict
-Every calculator shows nominal returns. Add a toggle that shows all numbers in today's rupees (deflated at 6% inflation). The property that "appreciated to ₹2Cr" might only be ₹1.1Cr in real terms. This is the single biggest blind spot in Indian housing decisions.
+### 3. "People Like You" Benchmarks
+Hardcoded persona × city benchmarks showing what similar people typically do:
+- "Most bachelors in Bengaluru earning ₹1L+ rent for 3-5 years before buying"
+- "Families in Mumbai with ₹50L+ savings typically buy within 2 years"
+- "Couples in Pune prefer renting in Kothrud/Baner before buying in Hinjewadi"
 
-**Engine addition**: Add `realValue = nominalValue / (1.06)^year` to snapshots. New toggle on NetWorthChart for "Show in today's ₹".
+Data structure: `{ profile, city, incomeRange, insight }[]` in a new file.
 
-### 4. Lifestyle Cost Parity Index
-Calculate how much more/less disposable income the user has under each scenario. Factor in: EMI vs rent, maintenance, property tax, insurance, commute delta, society restrictions (pet deposit, parking fees). Show a monthly "freedom money" comparison — the cash left after housing for travel, dining, hobbies.
+**Files:** Create `src/lib/benchmarkData.ts`, create `src/components/PeopleLikeYou.tsx`, integrate into results.
 
-**Engine addition**: `buyerFreedomMoney = income - emi - maintenance - propertyTax/12 - insurance` vs `renterFreedomMoney = income - rent`. Display as a side-by-side bar.
+### 4. Hardcoded Livability Data (crime + traffic + AQI)
+Enrich `locationData.ts` with NCRB crime rates, TomTom congestion index, and typical AQI per city. No live API calls — all static. Show in LocationInsights cards.
 
-### 5. Wealth Milestone Tracker
-Instead of just "net worth at Year X", show when the user hits life milestones: "When can I afford my kid's education?", "When do I hit ₹1Cr net worth?", "When can I retire early?" Map these against both buy and rent paths. Makes the abstract chart deeply personal.
+**Files:** Update `src/lib/locationData.ts`, update `src/components/LocationInsights.tsx`.
 
-**Engine addition**: Define milestone thresholds (₹25L, ₹50L, ₹1Cr, ₹2Cr, ₹5Cr). Find the year each path hits each milestone. Display as a comparison timeline.
+## Explicitly skipped
+- ❌ Live API calls (TomTom, WAQI, Open-Meteo)
+- ❌ Theme toggle
+- Decision journal and share cards: not prioritized but can add later
 
-### 6. Landlord Risk Score (Rent path)
-Unique to India: quantify the risk of landlord-driven disruptions — eviction for "personal use", arbitrary rent hikes beyond agreement, deposit withholding, maintenance neglect. Score based on city (some cities have stronger tenant protection laws) and lease duration. No calculator acknowledges this real friction cost.
-
-**Data addition**: Add `tenantProtectionScore` (1-5) per city to `locationData.ts`. Show insight card: "Tenant protection in [city] is [weak/moderate/strong]. Factor in X% chance of forced relocation every Y years."
-
-### 7. Opportunity Cost Clock
-A live-feeling counter showing: "Every month you delay deciding, you lose ₹X in potential wealth." Calculated from the difference in monthly compounding between the two paths. Creates urgency without being pushy — pure math.
-
-**Engine addition**: `monthlyOpportunityCost = abs(buyNetWorthGrowthRate - rentNetWorthGrowthRate) * currentCorpus / 12`
-
----
-
-## Implementation approach
-
-- Add new fields to `CalculationResult` interface for stress test, rent trap year, real-value snapshots, freedom money, milestones
-- Add `tenantProtectionScore` to `CityData` in `locationData.ts`
-- Create a new component `src/components/UniqueInsights.tsx` with collapsible cards for each insight
-- Add inflation toggle to `NetWorthChart.tsx`
-- Wire into both CompareTab and BuyTab results sections
-
-## Files to create/edit
-- `src/lib/calculations.ts` — new calculations for all 7 insights
-- `src/lib/locationData.ts` — add `tenantProtectionScore` per city
-- `src/components/UniqueInsights.tsx` — new component with all insight cards
-- `src/components/NetWorthChart.tsx` — add real-value toggle
-- `src/pages/CompareTab.tsx` — integrate UniqueInsights
-- `src/pages/BuyTab.tsx` — integrate stress test + milestones
-
+## Build order
+1. Onboarding wizard (HomeTab rewrite)
+2. AnimatedNumber + StoryResult components
+3. Story-mode integration into CompareTab
+4. PeopleLikeYou benchmarks
+5. Livability data enrichment (crime/traffic/AQI cards)
