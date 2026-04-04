@@ -26,8 +26,13 @@ function loadPrefs(): NotifPrefs {
 export default function NotificationsPage({ onBack }: NotificationsPageProps) {
   const [prefs, setPrefs] = useState<NotifPrefs>(loadPrefs);
 
-  const toggle = (key: keyof NotifPrefs) =>
-    setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: keyof NotifPrefs) => {
+    setPrefs(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const notifSupported = 'Notification' in window;
   const notifGranted = notifSupported && Notification.permission === 'granted';
