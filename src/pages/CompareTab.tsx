@@ -107,6 +107,9 @@ export default function CompareTab() {
     setTimeout(() => {
       setHasCalculated(true);
       setLoading(false);
+      // Trigger AI insights
+      const calcResult = calculate(fullInputs);
+      ai.fetchInsights(calcResult, shared.city, localInputs.userProfile, shared.monthlyIncome);
     }, 1200);
   };
 
