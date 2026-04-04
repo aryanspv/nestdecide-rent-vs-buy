@@ -33,7 +33,7 @@ export default function AboutPage({ onBack }: AboutPageProps) {
         <div className="space-y-3">
           {[
             { icon: MapPin, title: '10+ Indian Cities', desc: 'Real stamp duty, registration, deposit norms, and rental yield data' },
-            { icon: Calculator, title: '30-Year Modelling', desc: 'EMI, opportunity cost, property appreciation, and investment compounding' },
+            { icon: Calculator, title: '30-Year Modelling', desc: 'EMI, property appreciation, tax benefits, and total cost analysis' },
             { icon: Users, title: 'Lifestyle Intelligence', desc: 'Bachelor discrimination, mobility scoring, resale liquidity risk' },
             { icon: Shield, title: 'No Bias', desc: 'We don\'t sell property or loans. No hidden incentives.' },
           ].map((item, i) => (

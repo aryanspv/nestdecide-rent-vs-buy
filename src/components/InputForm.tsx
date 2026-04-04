@@ -206,7 +206,7 @@ export default function InputForm({ onCalculate }: InputFormProps) {
               </div>
               <CurrencyInput label="Current monthly rent" value={inputs.monthlyRent} onChange={v => update('monthlyRent', v)} />
               <CurrencyInput label="Monthly household income" value={inputs.monthlyIncome} onChange={v => update('monthlyIncome', v)} tooltip="Your total pre-tax household income from all sources" />
-              <CurrencyInput label="Current savings / investable amount" value={inputs.savings} onChange={v => update('savings', v)} tooltip="Total liquid savings you could invest or use as down payment" />
+              <CurrencyInput label="Current savings" value={inputs.savings} onChange={v => update('savings', v)} tooltip="Total liquid savings you could use as down payment or keep as emergency fund" />
             </div>
           )}
 
