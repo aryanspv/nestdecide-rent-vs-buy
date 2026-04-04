@@ -150,19 +150,6 @@ export default function UniqueInsights({ result }: UniqueInsightsProps) {
         <p>{landlordRisk.explanation}</p>
       </InsightCard>
 
-      {/* 7. Opportunity Cost Clock */}
-      <InsightCard icon={Clock} title="Opportunity Cost Clock" color="bg-cyan-500/15 text-cyan-400">
-        <div className="flex items-center justify-between">
-          <span>Monthly cost of indecision</span>
-          <span className="font-mono font-bold text-foreground text-base">
-            {formatINR(Math.round(opportunityCostPerMonth))}/mo
-          </span>
-        </div>
-        <p className="text-xs">
-          Every month you delay choosing between buying and renting, you're potentially missing out on this much wealth 
-          ({result.overallVerdict === 'BUY' ? 'buying' : result.overallVerdict === 'RENT' ? 'renting' : 'either path'} is the better option at your tenure).
-        </p>
-      </InsightCard>
     </motion.div>
   );
 }
