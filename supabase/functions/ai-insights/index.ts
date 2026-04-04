@@ -413,14 +413,13 @@ Rules:
 - Be blunt, useful and concrete
 - No markdown, no extra keys, no disclaimers`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5.2",
+    const models = ["openai/gpt-5.2", "google/gemini-3-flash-preview"];
+    let response: Response | null = null;
+
+    for (const model of models) {
+      const useReasoning = model.startsWith("openai/");
+      const bodyPayload: any = {
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -429,9 +428,6 @@ Rules:
           },
         ],
         temperature: 0.2,
-        reasoning: {
-          effort: "medium",
-        },
         tools: [
           {
             type: "function",
@@ -461,29 +457,54 @@ Rules:
           type: "function",
           function: { name: "provide_insights" },
         },
-      }),
-    });
+      };
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited — please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      if (useReasoning) {
+        bodyPayload.reasoning = { effort: "medium" };
+      }
+
+      try {
+        console.log(`Trying model: ${model}`);
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bodyPayload),
         });
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Add funds in Settings → Workspace → Usage." }),
-          {
-            status: 402,
+
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limited — please try again in a moment." }), {
+            status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+          });
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI credits exhausted. Add funds in Settings → Workspace → Usage." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (response.ok) {
+          console.log(`Success with model: ${model}`);
+          break;
+        }
+
+        const errText = await response.text();
+        console.error(`Model ${model} failed (${response.status}):`, errText);
+        response = null; // try next model
+      } catch (fetchErr) {
+        console.error(`Model ${model} fetch error:`, fetchErr);
+        response = null;
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
+    }
+
+    if (!response || !response.ok) {
+      console.error("All models failed, using fallback insights");
+      const fallback = buildFallbackInsights(summary);
+      return new Response(JSON.stringify(fallback), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
