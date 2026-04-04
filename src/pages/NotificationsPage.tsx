@@ -13,16 +13,26 @@ interface NotifPrefs {
   tips: boolean;
 }
 
-export default function NotificationsPage({ onBack }: NotificationsPageProps) {
-  const [prefs, setPrefs] = useState<NotifPrefs>({
-    marketUpdates: true,
-    rateChanges: true,
-    cityAlerts: false,
-    tips: true,
-  });
+const STORAGE_KEY = 'nestdecide_notif_prefs';
 
-  const toggle = (key: keyof NotifPrefs) =>
-    setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+function loadPrefs(): NotifPrefs {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { marketUpdates: true, rateChanges: true, cityAlerts: false, tips: true };
+}
+
+export default function NotificationsPage({ onBack }: NotificationsPageProps) {
+  const [prefs, setPrefs] = useState<NotifPrefs>(loadPrefs);
+
+  const toggle = (key: keyof NotifPrefs) => {
+    setPrefs(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const notifSupported = 'Notification' in window;
   const notifGranted = notifSupported && Notification.permission === 'granted';

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CurrencyInput, PercentInput } from '@/components/FormField';
 import CitySelector from '@/components/CitySelector';
@@ -7,18 +7,22 @@ import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, IndianRupee, TrendingUp, AlertTriangle, Clock, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { useUserData } from '@/contexts/UserDataContext';
+import { validateBuy, hasBlockingErrors } from '@/lib/validation';
+import { calculate, UserInputs } from '@/lib/calculations';
+import VerdictCard from '@/components/VerdictCard';
+import LocationInsights from '@/components/LocationInsights';
+import ShareVerdict from '@/components/ShareVerdict';
+import { Building2, AlertCircle, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import type { UserProfile, PropertyType, Furnishing } from '@/lib/locationData';
 
-interface BuyState {
-  city: string;
+interface BuyLocalState {
   propertyPrice: number;
   downPayment: number;
   interestRate: number;
   loanTenure: number;
   monthlyMaintenance: number;
   propertyAppreciation: number;
-  monthlyIncome: number;
   locality: string;
   userProfile: UserProfile;
   propertyType: PropertyType;
@@ -28,15 +32,13 @@ interface BuyState {
   resaleConcern: number;
 }
 
-const DEFAULT: BuyState = {
-  city: 'bengaluru',
+const DEFAULT_LOCAL: BuyLocalState = {
   propertyPrice: 8000000,
   downPayment: 1600000,
   interestRate: 8.5,
   loanTenure: 20,
   monthlyMaintenance: 5000,
   propertyAppreciation: 6,
-  monthlyIncome: 150000,
   locality: '',
   userProfile: 'couple',
   propertyType: 'apartment',
@@ -69,92 +71,105 @@ const PRIORITY_LABELS: Record<number, string> = {
   1: 'Low', 2: 'Slight', 3: 'Moderate', 4: 'High', 5: 'Critical',
 };
 
-function ResultRow({ label, value, bold, accent }: { label: string; value: string; bold?: boolean; accent?: string }) {
+function FieldError({ error }: { error?: string }) {
+  if (!error) return null;
+  const isWarning = error.includes('Most banks');
   return (
-    <div className="flex justify-between text-sm py-1.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono ${bold ? 'font-bold' : 'font-semibold'} ${accent ?? 'text-foreground'}`}>{value}</span>
-    </div>
+    <p className={`text-xs flex items-center gap-1 mt-0.5 ${isWarning ? 'text-amber-500' : 'text-destructive'}`}>
+      <AlertCircle className="h-3 w-3 shrink-0" /> {error}
+    </p>
   );
 }
 
-function calculateEMI(principal: number, annualRate: number, tenureYears: number): number {
-  const r = annualRate / 12 / 100;
-  const n = tenureYears * 12;
-  if (r === 0) return principal / n;
-  return (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-}
-
 export default function BuyTab() {
-  const [s, setS] = useState<BuyState>(DEFAULT);
-  const [showResults, setShowResults] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const update = <K extends keyof BuyState>(key: K, val: BuyState[K]) =>
+  const shared = useUserData();
+  const [s, setS] = useState<BuyLocalState>(DEFAULT_LOCAL);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [hasCalculated, setHasCalculated] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const verdictRef = useRef<HTMLDivElement>(null);
+
+  const update = <K extends keyof BuyLocalState>(key: K, val: BuyLocalState[K]) =>
     setS(prev => ({ ...prev, [key]: val }));
 
-  const cityData = CITY_DATA[s.city] ?? CITY_DATA.other;
+  const cityData = CITY_DATA[shared.city] ?? CITY_DATA.other;
+  const downPct = s.propertyPrice > 0 ? (s.downPayment / s.propertyPrice * 100).toFixed(0) : '0';
 
-  const analysis = useMemo(() => {
-    const loanAmount = s.propertyPrice - s.downPayment;
-    const emi = calculateEMI(loanAmount, s.interestRate, s.loanTenure);
-    const totalEmiPaid = emi * s.loanTenure * 12;
-    const totalInterest = totalEmiPaid - loanAmount;
+  const errors = validateBuy({
+    propertyPrice: s.propertyPrice,
+    downPayment: s.downPayment,
+    monthlyIncome: shared.monthlyIncome,
+    interestRate: s.interestRate,
+  });
+  const blocked = hasBlockingErrors(errors);
 
-    const stampDuty = s.propertyPrice * cityData.stampDutyPct / 100;
-    const registration = s.propertyPrice * cityData.registrationPct / 100;
-    const brokerage = s.propertyPrice * cityData.brokerageBuyPct / 100;
-    const totalUpfront = s.downPayment + stampDuty + registration + brokerage;
-
-    const emiToIncome = (emi / s.monthlyIncome) * 100;
-    const affordabilityVerdict = emiToIncome <= 35 ? 'healthy' : emiToIncome <= 50 ? 'moderate' : 'stretched';
-
-    const propertyAtEnd = s.propertyPrice * Math.pow(1 + s.propertyAppreciation / 100, s.loanTenure);
-    let totalMaintenanceCost = 0;
-    let m = s.monthlyMaintenance;
-    for (let y = 0; y < s.loanTenure; y++) {
-      totalMaintenanceCost += m * 12;
-      m *= 1.05;
-    }
-
-    const totalCostOfOwnership = totalEmiPaid + totalUpfront - s.downPayment + totalMaintenanceCost;
-    const totalTaxBenefit = Math.min(150000, loanAmount / s.loanTenure) * 0.3 * s.loanTenure
-      + Math.min(200000, totalInterest / s.loanTenure) * 0.3 * s.loanTenure;
-
-    return {
-      loanAmount, emi, totalEmiPaid, totalInterest,
-      stampDuty, registration, brokerage, totalUpfront,
-      emiToIncome, affordabilityVerdict,
-      propertyAtEnd, totalMaintenanceCost, totalCostOfOwnership,
-      totalTaxBenefit,
-      downPaymentPct: s.propertyPrice > 0 ? (s.downPayment / s.propertyPrice * 100) : 0,
-    };
-  }, [s, cityData]);
-
-  const affordColors = {
-    healthy: 'bg-signal-buy-bg text-signal-buy-foreground',
-    moderate: 'bg-signal-neutral-bg text-signal-neutral-foreground',
-    stretched: 'bg-signal-rent-bg text-signal-rent-foreground',
+  // Build full UserInputs for the engine
+  const engineInputs: UserInputs = {
+    city: shared.city,
+    monthlyRent: shared.monthlyRent,
+    monthlyIncome: shared.monthlyIncome,
+    savings: shared.savings,
+    propertyPrice: s.propertyPrice,
+    downPayment: s.downPayment,
+    interestRate: s.interestRate,
+    loanTenure: s.loanTenure,
+    monthlyMaintenance: s.monthlyMaintenance,
+    plannedStay: s.loanTenure, // use tenure as stay for buy-only view
+    propertyAppreciation: s.propertyAppreciation,
+    investmentReturn: 12,
+    annualRentIncrease: 8,
+    locality: s.locality,
+    propertyType: s.propertyType,
+    furnishing: s.furnishing,
+    userProfile: s.userProfile,
+    commuteDistance: s.commuteDistance,
+    safetyPriority: s.safetyPriority,
+    resaleConcern: s.resaleConcern,
   };
 
-  const toggleSection = (id: string) => setExpandedSection(prev => prev === id ? null : id);
+  const result = useMemo(() => {
+    if (!hasCalculated) return null;
+    return calculate(engineInputs);
+  }, [hasCalculated, engineInputs]);
+
+  const handleCalculate = () => {
+    setLoading(true);
+    setHasCalculated(false);
+    setTimeout(() => {
+      setHasCalculated(true);
+      setLoading(false);
+    }, 800);
+  };
 
   return (
     <div className="space-y-5 pb-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">Buying a Home</h1>
-        <p className="text-sm text-muted-foreground mt-1">Understand the true cost of ownership</p>
+        <p className="text-sm text-muted-foreground mt-1">Full cost analysis powered by 30-year engine</p>
       </div>
 
       {/* Inputs */}
       <div className="glass-card p-4 space-y-3">
-        <CitySelector value={s.city} onChange={v => update('city', v)} />
-        <CurrencyInput label="Property price" value={s.propertyPrice} onChange={v => update('propertyPrice', v)} />
-        <div className="grid grid-cols-2 gap-2.5">
-          <CurrencyInput label="Down payment" value={s.downPayment} onChange={v => update('downPayment', v)} hint={`${analysis.downPaymentPct.toFixed(0)}%`} />
-          <CurrencyInput label="Monthly income" value={s.monthlyIncome} onChange={v => update('monthlyIncome', v)} />
+        <CitySelector value={shared.city} onChange={v => shared.updateField('city', v)} />
+        <div>
+          <CurrencyInput label="Property price" value={s.propertyPrice} onChange={v => update('propertyPrice', v)} />
+          <FieldError error={errors.propertyPrice} />
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <PercentInput label="Interest rate" value={s.interestRate} onChange={v => update('interestRate', v)} hint="~8.5%" />
+          <div>
+            <CurrencyInput label="Down payment" value={s.downPayment} onChange={v => update('downPayment', v)} hint={`${downPct}%`} />
+            <FieldError error={errors.downPayment} />
+          </div>
+          <div>
+            <CurrencyInput label="Monthly income" value={shared.monthlyIncome} onChange={v => shared.updateField('monthlyIncome', v)} />
+            <FieldError error={errors.monthlyIncome} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <PercentInput label="Interest rate" value={s.interestRate} onChange={v => update('interestRate', v)} hint="~8.5%" />
+            <FieldError error={errors.interestRate} />
+          </div>
           <PercentInput label="Appreciation" value={s.propertyAppreciation} onChange={v => update('propertyAppreciation', v)} hint={`${cityData.avgAppreciationRange[0]}-${cityData.avgAppreciationRange[1]}%`} />
         </div>
         <div className="grid grid-cols-2 gap-2.5">
@@ -168,170 +183,112 @@ export default function BuyTab() {
           <CurrencyInput label="Maintenance/mo" value={s.monthlyMaintenance} onChange={v => update('monthlyMaintenance', v)} />
         </div>
 
-        {/* Location & Lifestyle */}
-        <div className="border-t border-border/30 pt-3 mt-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Location & Lifestyle</p>
-        </div>
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground">Locality / Area</label>
-          <Input
-            type="text"
-            placeholder="e.g. Koramangala, Bandra West..."
-            value={s.locality}
-            onChange={(e) => update('locality', e.target.value)}
-            className="h-10 rounded-xl text-sm"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Profile</label>
-            <Select value={s.userProfile} onValueChange={v => update('userProfile', v as UserProfile)}>
-              <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Property type</label>
-            <Select value={s.propertyType} onValueChange={v => update('propertyType', v as PropertyType)}>
-              <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PROPERTY_TYPE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground">Furnishing</label>
-          <Select value={s.furnishing} onValueChange={v => update('furnishing', v as Furnishing)}>
-            <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {FURNISHING_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-foreground">Commute (one-way)</label>
-          <div className="flex items-center gap-3">
-            <Slider value={[s.commuteDistance]} onValueChange={([v]) => update('commuteDistance', v)} min={0} max={50} step={1} className="flex-1" />
-            <span className="text-sm font-mono font-semibold w-12 text-right">{s.commuteDistance}km</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Safety priority</label>
-            <div className="flex items-center gap-3">
-              <Slider value={[s.safetyPriority]} onValueChange={([v]) => update('safetyPriority', v)} min={1} max={5} step={1} className="flex-1" />
-              <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.safetyPriority]}</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Resale concern</label>
-            <div className="flex items-center gap-3">
-              <Slider value={[s.resaleConcern]} onValueChange={([v]) => update('resaleConcern', v)} min={1} max={5} step={1} className="flex-1" />
-              <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.resaleConcern]}</span>
-            </div>
-          </div>
-        </div>
+        {/* Advanced: Location & Lifestyle */}
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-1.5 text-xs text-primary font-medium w-full py-1"
+        >
+          {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {showAdvanced ? 'Hide' : 'Show'} location & lifestyle
+        </button>
+
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Locality / Area</label>
+                <Input type="text" placeholder="e.g. Koramangala, Bandra West..." value={s.locality} onChange={(e) => update('locality', e.target.value)} className="h-10 rounded-xl text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Profile</label>
+                  <Select value={s.userProfile} onValueChange={v => update('userProfile', v as UserProfile)}>
+                    <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PROFILE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Property type</label>
+                  <Select value={s.propertyType} onValueChange={v => update('propertyType', v as PropertyType)}>
+                    <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPE_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Furnishing</label>
+                <Select value={s.furnishing} onValueChange={v => update('furnishing', v as Furnishing)}>
+                  <SelectTrigger className="h-10 rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FURNISHING_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Commute (one-way)</label>
+                <div className="flex items-center gap-3">
+                  <Slider value={[s.commuteDistance]} onValueChange={([v]) => update('commuteDistance', v)} min={0} max={50} step={1} className="flex-1" />
+                  <span className="text-sm font-mono font-semibold w-12 text-right">{s.commuteDistance}km</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Safety priority</label>
+                  <div className="flex items-center gap-3">
+                    <Slider value={[s.safetyPriority]} onValueChange={([v]) => update('safetyPriority', v)} min={1} max={5} step={1} className="flex-1" />
+                    <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.safetyPriority]}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Resale concern</label>
+                  <div className="flex items-center gap-3">
+                    <Slider value={[s.resaleConcern]} onValueChange={([v]) => update('resaleConcern', v)} min={1} max={5} step={1} className="flex-1" />
+                    <span className="text-xs font-medium w-16 text-right text-muted-foreground">{PRIORITY_LABELS[s.resaleConcern]}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
-          onClick={() => setShowResults(true)}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          onClick={handleCalculate}
+          disabled={blocked}
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:pointer-events-none"
         >
-          <Building2 className="h-4 w-4" /> Analyse Purchase
+          <Zap className="h-4 w-4" /> Analyse Purchase
         </button>
       </div>
 
-      {/* Results */}
+      {/* Loading */}
       <AnimatePresence>
-        {showResults && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {/* EMI summary */}
-            <div className="glass-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <IndianRupee className="h-4 w-4" /> EMI & Affordability
-                </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${affordColors[analysis.affordabilityVerdict]}`}>
-                  {analysis.affordabilityVerdict}
-                </span>
-              </div>
-              <div className="text-center py-3 mb-3 bg-accent/30 rounded-xl">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Monthly EMI</p>
-                <p className="text-2xl font-bold text-foreground font-['Space_Grotesk']">{formatINR(analysis.emi)}</p>
-              </div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">EMI-to-income</span>
-                <span className="font-semibold">{analysis.emiToIncome.toFixed(0)}%</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    analysis.affordabilityVerdict === 'healthy' ? 'bg-signal-buy' :
-                    analysis.affordabilityVerdict === 'moderate' ? 'bg-signal-neutral' : 'bg-destructive'
-                  }`}
-                  style={{ width: `${Math.min(analysis.emiToIncome, 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Day-1 Costs */}
-            <div className="glass-card overflow-hidden">
-              <button onClick={() => toggleSection('upfront')} className="w-full p-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4" /> Day-1 Cash Outflow
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono font-bold text-foreground">{formatLakhs(analysis.totalUpfront)}</span>
-                  {expandedSection === 'upfront' ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-              <AnimatePresence>
-                {expandedSection === 'upfront' && (
-                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 space-y-0.5">
-                      <ResultRow label="Down payment" value={formatLakhs(s.downPayment)} />
-                      <ResultRow label={`Stamp duty (${cityData.stampDutyPct}%)`} value={formatLakhs(analysis.stampDuty)} />
-                      <ResultRow label={`Registration (${cityData.registrationPct}%)`} value={formatLakhs(analysis.registration)} />
-                      <ResultRow label={`Brokerage (~${cityData.brokerageBuyPct}%)`} value={formatLakhs(analysis.brokerage)} />
-                      <div className="border-t border-border/30 my-1" />
-                      <ResultRow label="Total day-1 cash" value={formatLakhs(analysis.totalUpfront)} bold />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Long-term */}
-            <div className="glass-card overflow-hidden">
-              <button onClick={() => toggleSection('longterm')} className="w-full p-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <Clock className="h-4 w-4" /> {s.loanTenure}-Year Outlook
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono font-bold text-signal-buy">{formatLakhs(analysis.propertyAtEnd)}</span>
-                  {expandedSection === 'longterm' ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-              <AnimatePresence>
-                {expandedSection === 'longterm' && (
-                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 space-y-0.5">
-                      <ResultRow label="Total EMI paid" value={formatLakhs(analysis.totalEmiPaid)} />
-                      <ResultRow label="Total interest" value={formatLakhs(analysis.totalInterest)} />
-                      <ResultRow label="Maintenance" value={formatLakhs(analysis.totalMaintenanceCost)} />
-                      <ResultRow label="Tax benefit (80C + 24B)" value={formatLakhs(analysis.totalTaxBenefit)} accent="text-signal-buy" />
-                      <div className="border-t border-border/30 my-1" />
-                      <ResultRow label={`Property value at yr ${s.loanTenure}`} value={formatLakhs(analysis.propertyAtEnd)} bold accent="text-signal-buy" />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+        {loading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="glass-card p-8 flex flex-col items-center gap-3">
+            <div className="h-8 w-8 rounded-full border-2 border-muted border-t-primary animate-spin" />
+            <p className="text-sm font-medium text-foreground">Running full analysis...</p>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Results */}
+      {result && !loading && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div ref={verdictRef}>
+            <VerdictCard result={result} />
+          </div>
+          <LocationInsights result={result} />
+          <ShareVerdict targetRef={verdictRef} title="My NestDecide Buy Analysis" />
+          <div className="text-center pt-1">
+            <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">
+              ← Modify inputs
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
