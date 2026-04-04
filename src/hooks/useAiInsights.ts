@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CalculationResult, UserInputs } from '@/lib/calculations';
 import { formatLakhs } from '@/lib/formatCurrency';
 import { getCityData } from '@/lib/locationData';
+import { getLocalityProfile } from '@/lib/localityIntelligence';
 
 export interface AiInsights {
   headline: string;
