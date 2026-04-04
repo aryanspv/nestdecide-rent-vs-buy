@@ -50,6 +50,43 @@ export interface YearlySnapshot {
   totalRentPaid: number;
   totalEmiPaid: number;
   rentInvestmentCorpus: number;
+  // Real (inflation-adjusted) values
+  buyNetWorthReal: number;
+  rentNetWorthReal: number;
+}
+
+export interface StressTestResult {
+  emergencyRunwayMonths: number;
+  emiAtPlus1: number;
+  emiAtPlus2: number;
+  emiDeltaPlus1: number;
+  emiDeltaPlus2: number;
+  burdenPctCurrent: number;
+  burdenPctPlus1: number;
+  burdenPctPlus2: number;
+  riskLevel: 'safe' | 'stretched' | 'danger';
+}
+
+export interface WealthMilestone {
+  label: string;
+  amountLakhs: number;
+  buyYear: number | null;
+  rentYear: number | null;
+  fasterPath: 'buy' | 'rent' | 'tie';
+}
+
+export interface UniqueInsights {
+  stressTest: StressTestResult;
+  rentTrapYear: number | null; // year cumulative rent > transaction costs
+  freedomMoney: { buyer: number; renter: number; delta: number };
+  milestones: WealthMilestone[];
+  landlordRisk: {
+    protectionLevel: 'weak' | 'moderate' | 'strong';
+    score: number;
+    relocationFreqYears: number;
+    explanation: string;
+  };
+  opportunityCostPerMonth: number; // ₹ per month of indecision
 }
 
 export interface LocationInsight {
