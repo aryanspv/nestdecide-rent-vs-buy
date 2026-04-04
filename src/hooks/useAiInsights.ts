@@ -102,6 +102,29 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
       .map(m => ({ label: m.label, buyYear: m.buyYear, rentYear: m.rentYear, faster: m.fasterPath })),
 
     verdictReasons: result.verdictReasons,
+
+    // City livability data for locality-specific insights
+    cityLivability: {
+      crimeRatePerLakh: cityData.crimeRatePerLakh,
+      topCrimes: cityData.topCrimes,
+      crimeSafetyGrade: cityData.crimeSafetyGrade,
+      trafficCongestionIndex: cityData.trafficCongestionIndex,
+      avgCommuteTimeMins: cityData.avgCommuteTimeMins,
+      peakHourDelayPct: cityData.peakHourDelayPct,
+      avgAQI: cityData.avgAQI,
+      aqiCategory: cityData.aqiCategory,
+      bachelorFriendliness: cityData.bachelorFriendliness,
+      avgRentDepositMonths: cityData.avgRentDepositMonths,
+    },
+
+    // Location insight explanations
+    bachelorInsight: result.locationInsight.bachelorInsight,
+    mobilityExplanation: result.locationInsight.mobility.explanation,
+    liquidityExplanation: result.locationInsight.liquidity.explanation,
+    rentalYieldExplanation: result.locationInsight.rentalYield.explanation,
+    locationExplanation: result.locationInsight.locationExplanation,
+    hiddenBuyCosts: result.locationInsight.hiddenBuyCosts,
+    hiddenRentCosts: result.locationInsight.hiddenRentCosts,
   };
 }
 
