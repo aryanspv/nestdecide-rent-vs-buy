@@ -123,10 +123,7 @@ export default function RentTab({ onNavigate }: RentTabProps) {
           <CurrencyInput label="Current savings" value={shared.savings} onChange={v => updateShared('savings', v)} />
           <FieldError error={errors.savings} />
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <PercentInput label="Rent hike/yr" value={local.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} hint="5-10%" />
-          <PercentInput label="Investment return" value={local.investmentReturn} onChange={v => updateLocal('investmentReturn', v)} hint="12-14%" />
-        </div>
+        <PercentInput label="Rent hike/yr" value={local.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} hint="5-10%" />
         <div className="space-y-1">
           <label className="text-sm font-medium text-foreground">Time horizon</label>
           <div className="flex items-center gap-3">
