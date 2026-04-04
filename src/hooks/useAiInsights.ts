@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CalculationResult, UserInputs } from '@/lib/calculations';
 import { formatLakhs } from '@/lib/formatCurrency';
 import { getCityData } from '@/lib/locationData';
+import { getLocalityProfile } from '@/lib/localityIntelligence';
 
 export interface AiInsights {
   headline: string;
@@ -14,10 +15,14 @@ export interface AiInsights {
 function buildSummary(result: CalculationResult, inputs: UserInputs) {
   const staySnap = result.snapshots[Math.min(inputs.plannedStay, 30) - 1];
   const cityData = getCityData(inputs.city);
+  const localityProfile = getLocalityProfile(inputs.city, inputs.locality || '');
+
   return {
     city: inputs.city,
     cityLabel: cityData.label,
     locality: inputs.locality || 'not specified',
+    localityProfile,
+    localitySummary: localityProfile?.summary ?? null,
     userProfile: inputs.userProfile,
     propertyType: inputs.propertyType,
     furnishing: inputs.furnishing,
