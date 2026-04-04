@@ -36,6 +36,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 4, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 2, avgCommutePerKmMonthly: 350,
     tenantProtectionScore: 4, avgRelocationFreqYears: 5,
+    crimeRatePerLakh: 166, topCrimes: ['Theft', 'Cheating/Fraud', 'Assault'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 8, avgCommuteTimeMins: 52, peakHourDelayPct: 65,
+    avgAQI: 155, aqiCategory: 'Moderate',
   },
   delhi: {
     label: 'Delhi NCR',
@@ -44,6 +47,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 300,
     tenantProtectionScore: 3, avgRelocationFreqYears: 4,
+    crimeRatePerLakh: 310, topCrimes: ['Theft', 'Assault', 'Burglary'], crimeSafetyGrade: 'D',
+    trafficCongestionIndex: 9, avgCommuteTimeMins: 58, peakHourDelayPct: 70,
+    avgAQI: 260, aqiCategory: 'Very Poor',
   },
   bengaluru: {
     label: 'Bengaluru',
@@ -52,6 +58,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 4, avgRentDepositMonths: 10, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 280,
     tenantProtectionScore: 3, avgRelocationFreqYears: 3,
+    crimeRatePerLakh: 452, topCrimes: ['Theft', 'Cheating/Fraud', 'Cybercrime'], crimeSafetyGrade: 'C',
+    trafficCongestionIndex: 9, avgCommuteTimeMins: 55, peakHourDelayPct: 71,
+    avgAQI: 95, aqiCategory: 'Satisfactory',
   },
   hyderabad: {
     label: 'Hyderabad',
@@ -60,6 +69,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 250,
     tenantProtectionScore: 2, avgRelocationFreqYears: 3,
+    crimeRatePerLakh: 389, topCrimes: ['Theft', 'Cheating/Fraud', 'Assault'], crimeSafetyGrade: 'C',
+    trafficCongestionIndex: 7, avgCommuteTimeMins: 42, peakHourDelayPct: 53,
+    avgAQI: 110, aqiCategory: 'Moderate',
   },
   pune: {
     label: 'Pune',
@@ -68,6 +80,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 2, avgCommutePerKmMonthly: 260,
     tenantProtectionScore: 4, avgRelocationFreqYears: 5,
+    crimeRatePerLakh: 410, topCrimes: ['Theft', 'Cheating/Fraud', 'Road Accidents'], crimeSafetyGrade: 'C',
+    trafficCongestionIndex: 7, avgCommuteTimeMins: 40, peakHourDelayPct: 48,
+    avgAQI: 105, aqiCategory: 'Moderate',
   },
   chennai: {
     label: 'Chennai',
@@ -76,6 +91,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3, avgRentDepositMonths: 6, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 250,
     tenantProtectionScore: 3, avgRelocationFreqYears: 4,
+    crimeRatePerLakh: 198, topCrimes: ['Theft', 'Assault', 'Kidnapping'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 7, avgCommuteTimeMins: 44, peakHourDelayPct: 55,
+    avgAQI: 90, aqiCategory: 'Satisfactory',
   },
   ahmedabad: {
     label: 'Ahmedabad',
@@ -84,6 +102,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 220,
     tenantProtectionScore: 2, avgRelocationFreqYears: 3,
+    crimeRatePerLakh: 285, topCrimes: ['Theft', 'Cheating/Fraud', 'Assault'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 6, avgCommuteTimeMins: 35, peakHourDelayPct: 42,
+    avgAQI: 145, aqiCategory: 'Moderate',
   },
   kolkata: {
     label: 'Kolkata',
@@ -92,6 +113,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 2.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 200,
     tenantProtectionScore: 4, avgRelocationFreqYears: 6,
+    crimeRatePerLakh: 162, topCrimes: ['Theft', 'Assault', 'Cheating/Fraud'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 7, avgCommuteTimeMins: 45, peakHourDelayPct: 50,
+    avgAQI: 170, aqiCategory: 'Poor',
   },
   gurgaon: {
     label: 'Gurgaon',
@@ -100,6 +124,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 320,
     tenantProtectionScore: 2, avgRelocationFreqYears: 3,
+    crimeRatePerLakh: 275, topCrimes: ['Theft', 'Robbery', 'Vehicle Theft'], crimeSafetyGrade: 'C',
+    trafficCongestionIndex: 8, avgCommuteTimeMins: 48, peakHourDelayPct: 60,
+    avgAQI: 230, aqiCategory: 'Poor',
   },
   noida: {
     label: 'Noida / Greater Noida',
@@ -108,6 +135,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 2.5, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 280,
     tenantProtectionScore: 2, avgRelocationFreqYears: 3,
+    crimeRatePerLakh: 220, topCrimes: ['Theft', 'Cheating/Fraud', 'Cybercrime'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 8, avgCommuteTimeMins: 50, peakHourDelayPct: 62,
+    avgAQI: 245, aqiCategory: 'Very Poor',
   },
   other: {
     label: 'Other',
@@ -116,6 +146,9 @@ export const CITY_DATA: Record<string, CityData> = {
     avgLiquidityScore: 3, avgRentDepositMonths: 3, brokerageBuyPct: 1,
     brokerageRentMonths: 1, avgCommutePerKmMonthly: 250,
     tenantProtectionScore: 3, avgRelocationFreqYears: 4,
+    crimeRatePerLakh: 250, topCrimes: ['Theft', 'Assault', 'Cheating/Fraud'], crimeSafetyGrade: 'B',
+    trafficCongestionIndex: 6, avgCommuteTimeMins: 38, peakHourDelayPct: 45,
+    avgAQI: 120, aqiCategory: 'Moderate',
   },
 };
 
