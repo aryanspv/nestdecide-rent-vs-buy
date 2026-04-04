@@ -221,34 +221,6 @@ export default function RentTab({ onNavigate }: RentTabProps) {
               </AnimatePresence>
             </div>
 
-            {/* Investment Tracker */}
-            <div className="glass-card overflow-hidden">
-              <button onClick={() => toggleSection('invest')} className="w-full p-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4" /> Rent & Invest
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono font-bold text-primary">{formatLakhs(analysis.totalWealth)}</span>
-                  {expandedSection === 'invest' ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-              <AnimatePresence>
-                {expandedSection === 'invest' && (
-                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="px-4 pb-4 space-y-0.5">
-                      <ResultRow label="Savings grow to" value={formatLakhs(analysis.investmentCorpus)} />
-                      <ResultRow label="Monthly SIP surplus" value={formatINR(analysis.monthlySurplus)} />
-                      <ResultRow label="SIP corpus" value={formatLakhs(analysis.sipCorpus)} />
-                      <div className="border-t border-border/30 my-1" />
-                      <ResultRow label="Total projected wealth" value={formatLakhs(analysis.totalWealth)} bold />
-                      <p className="text-[11px] text-muted-foreground mt-2">
-                        Lump sum + SIP at {local.investmentReturn}% for {local.years}yr
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
