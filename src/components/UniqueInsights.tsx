@@ -120,28 +120,15 @@ export default function UniqueInsights({ result }: UniqueInsightsProps) {
         )}
       </InsightCard>
 
-      {/* 5. Wealth Milestones */}
+      {/* 5. Wealth Milestones (buy path only) */}
       {reachableMilestones.length > 0 && (
         <InsightCard icon={Target} title="Wealth Milestone Tracker" color="bg-purple-500/15 text-purple-400">
+          <p className="text-xs">When your property equity hits these milestones:</p>
           <div className="space-y-2 pt-1">
-            {reachableMilestones.map(m => (
+            {reachableMilestones.filter(m => m.buyYear !== null).map(m => (
               <div key={m.label} className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-foreground">{m.label}</span>
-                <div className="flex items-center gap-3">
-                  <span className={m.fasterPath === 'buy' ? 'text-primary font-bold' : ''}>
-                    Buy: {m.buyYear ? `Yr ${m.buyYear}` : '—'}
-                  </span>
-                  <span className={m.fasterPath === 'rent' ? 'text-emerald-400 font-bold' : ''}>
-                    Rent: {m.rentYear ? `Yr ${m.rentYear}` : '—'}
-                  </span>
-                  {m.fasterPath !== 'tie' && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
-                      m.fasterPath === 'buy' ? 'bg-primary/15 text-primary' : 'bg-emerald-500/15 text-emerald-400'
-                    }`}>
-                      {m.fasterPath === 'buy' ? '🏠 Buy wins' : '📈 Rent wins'}
-                    </span>
-                  )}
-                </div>
+                <span className="text-primary font-bold">Year {m.buyYear}</span>
               </div>
             ))}
           </div>
