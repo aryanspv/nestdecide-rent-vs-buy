@@ -560,22 +560,26 @@ function isSpecificAction(value: string, summary: any, profile?: any) {
     !isGenericBoilerplate(value) &&
     !hasForbiddenArchetypeSignal(value, summary, profile) &&
     hasArchetypeSignal(value, summary, profile) &&
-    (localityName && lower.includes(localityName)) ||
-    (alternative && lower.includes(alternative)) ||
-    /₹|\d/.test(value) ||
-    countSpecificityHits(value, summary, profile) >= 1
+    (
+      (localityName && lower.includes(localityName)) ||
+      (alternative && lower.includes(alternative)) ||
+      /₹|\d/.test(value) ||
+      countSpecificityHits(value, summary, profile) >= 1
+    )
   );
 }
 
 function finalizeInsights(summary: any, rawInsights: any): InsightPayload {
   const profile = summary?.localityProfile;
   const fallback = buildFallbackInsights(summary);
-  const actionCandidates = Array.isArray(rawInsights?.actionItems)
-    ? rawInsights.actionItems.map((item: unknown) => ensureString(item)).filter(Boolean)
+   const actionCandidates: string[] = Array.isArray(rawInsights?.actionItems)
+    ? rawInsights.actionItems
+        .map((item: unknown) => ensureString(item))
+        .filter((item: string) => Boolean(item))
     : [];
 
-  const dedupedActions = Array.from(new Set(actionCandidates.map((item) => item.trim())))
-    .filter((item) => isSpecificAction(item, summary, profile));
+   const dedupedActions: string[] = Array.from(new Set(actionCandidates.map((item: string) => item.trim())))
+    .filter((item: string) => isSpecificAction(item, summary, profile));
 
   return {
     headline: isSpecificHeadline(ensureString(rawInsights?.headline), summary, profile)
