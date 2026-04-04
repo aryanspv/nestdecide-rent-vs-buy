@@ -1,31 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CurrencyInput, PercentInput } from '@/components/FormField';
 import CitySelector from '@/components/CitySelector';
 import { formatINR, formatLakhs } from '@/lib/formatCurrency';
 import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
-import { Wallet, TrendingUp, PiggyBank, Receipt, IndianRupee, ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { useUserData } from '@/contexts/UserDataContext';
+import { validateRent, hasBlockingErrors } from '@/lib/validation';
+import { Wallet, TrendingUp, Receipt, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react';
+import type { TabId } from '@/components/BottomNav';
 
-interface RentState {
-  city: string;
-  monthlyRent: number;
-  monthlyIncome: number;
-  savings: number;
+interface RentTabProps {
+  onNavigate: (tab: TabId) => void;
+}
+
+interface RentLocalState {
   annualRentIncrease: number;
   investmentReturn: number;
   years: number;
 }
-
-const DEFAULT: RentState = {
-  city: 'bengaluru',
-  monthlyRent: 30000,
-  monthlyIncome: 150000,
-  savings: 2000000,
-  annualRentIncrease: 8,
-  investmentReturn: 12,
-  years: 10,
-};
 
 function ResultRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
@@ -36,47 +29,75 @@ function ResultRow({ label, value, bold }: { label: string; value: string; bold?
   );
 }
 
-export default function RentTab() {
-  const [s, setS] = useState<RentState>(DEFAULT);
+function FieldError({ error }: { error?: string }) {
+  if (!error) return null;
+  const isWarning = error.includes('Most banks');
+  return (
+    <p className={`text-xs flex items-center gap-1 mt-0.5 ${isWarning ? 'text-amber-500' : 'text-destructive'}`}>
+      <AlertCircle className="h-3 w-3 shrink-0" /> {error}
+    </p>
+  );
+}
+
+export default function RentTab({ onNavigate }: RentTabProps) {
+  const shared = useUserData();
+  const [local, setLocal] = useState<RentLocalState>({
+    annualRentIncrease: 8,
+    investmentReturn: 12,
+    years: 10,
+  });
   const [showResults, setShowResults] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const update = <K extends keyof RentState>(key: K, val: RentState[K]) =>
-    setS(prev => ({ ...prev, [key]: val }));
 
-  const cityData = CITY_DATA[s.city] ?? CITY_DATA.other;
+  const updateShared = <K extends keyof typeof shared>(key: K, val: (typeof shared)[K]) => {
+    if (key === 'city' || key === 'monthlyIncome' || key === 'monthlyRent' || key === 'savings') {
+      shared.updateField(key as any, val as any);
+    }
+  };
+  const updateLocal = <K extends keyof RentLocalState>(key: K, val: RentLocalState[K]) =>
+    setLocal(prev => ({ ...prev, [key]: val }));
+
+  const errors = validateRent({
+    monthlyRent: shared.monthlyRent,
+    monthlyIncome: shared.monthlyIncome,
+    savings: shared.savings,
+  });
+  const blocked = hasBlockingErrors(errors);
+
+  const cityData = CITY_DATA[shared.city] ?? CITY_DATA.other;
 
   const analysis = useMemo(() => {
-    const rentToIncome = (s.monthlyRent / s.monthlyIncome) * 100;
-    const maxAffordableRent = s.monthlyIncome * 0.3;
+    const rentToIncome = (shared.monthlyRent / shared.monthlyIncome) * 100;
+    const maxAffordableRent = shared.monthlyIncome * 0.3;
     const affordabilityVerdict = rentToIncome <= 25 ? 'healthy' : rentToIncome <= 35 ? 'moderate' : 'stretched';
 
     let totalRent = 0;
-    let currentRent = s.monthlyRent;
-    for (let y = 1; y <= s.years; y++) {
+    let currentRent = shared.monthlyRent;
+    for (let y = 1; y <= local.years; y++) {
       totalRent += currentRent * 12;
-      currentRent *= 1 + s.annualRentIncrease / 100;
+      currentRent *= 1 + local.annualRentIncrease / 100;
     }
 
-    const securityDeposit = s.monthlyRent * cityData.avgRentDepositMonths;
-    const brokerage = s.monthlyRent * cityData.brokerageRentMonths;
-    const investmentCorpus = s.savings * Math.pow(1 + s.investmentReturn / 100, s.years);
-    const monthlySurplus = Math.max(0, s.monthlyIncome - s.monthlyRent - s.monthlyIncome * 0.4);
+    const securityDeposit = shared.monthlyRent * cityData.avgRentDepositMonths;
+    const brokerage = shared.monthlyRent * cityData.brokerageRentMonths;
+    const investmentCorpus = shared.savings * Math.pow(1 + local.investmentReturn / 100, local.years);
+    const monthlySurplus = Math.max(0, shared.monthlyIncome - shared.monthlyRent - shared.monthlyIncome * 0.4);
 
     let sipCorpus = 0;
-    const monthlyReturn = s.investmentReturn / 100 / 12;
-    for (let m = 1; m <= s.years * 12; m++) {
+    const monthlyReturn = local.investmentReturn / 100 / 12;
+    for (let m = 1; m <= local.years * 12; m++) {
       sipCorpus = (sipCorpus + monthlySurplus) * (1 + monthlyReturn);
     }
 
     const totalWealth = investmentCorpus + sipCorpus;
-    const rentAtEnd = s.monthlyRent * Math.pow(1 + s.annualRentIncrease / 100, s.years);
+    const rentAtEnd = shared.monthlyRent * Math.pow(1 + local.annualRentIncrease / 100, local.years);
 
     return {
       rentToIncome, maxAffordableRent, affordabilityVerdict,
       totalRent, securityDeposit, brokerage,
       investmentCorpus, monthlySurplus, sipCorpus, totalWealth, rentAtEnd,
     };
-  }, [s, cityData]);
+  }, [shared, local, cityData]);
 
   const affordColors = {
     healthy: 'bg-signal-buy-bg text-signal-buy-foreground',
@@ -84,49 +105,81 @@ export default function RentTab() {
     stretched: 'bg-signal-rent-bg text-signal-rent-foreground',
   };
 
+  const verdictMessages = {
+    healthy: { title: 'Your rent is affordable ✅', desc: 'You have solid headroom to save and invest.' },
+    moderate: { title: 'Rent is manageable ⚠️', desc: 'You can sustain this, but savings may be tight in high-expense months.' },
+    stretched: { title: 'Rent is stretching your budget 🔴', desc: 'Consider downsizing or negotiating. Little room for investments.' },
+  };
+
   const toggleSection = (id: string) => setExpandedSection(prev => prev === id ? null : id);
 
   return (
     <div className="space-y-5 pb-4">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">Renting Smart</h1>
         <p className="text-sm text-muted-foreground mt-1">Understand your rent costs & investment potential</p>
       </div>
 
-      {/* Compact inputs */}
       <div className="glass-card p-4 space-y-3">
-        <CitySelector value={s.city} onChange={v => update('city', v)} />
+        <CitySelector value={shared.city} onChange={v => updateShared('city', v)} />
         <div className="grid grid-cols-2 gap-2.5">
-          <CurrencyInput label="Monthly rent" value={s.monthlyRent} onChange={v => update('monthlyRent', v)} />
-          <CurrencyInput label="Monthly income" value={s.monthlyIncome} onChange={v => update('monthlyIncome', v)} />
+          <div>
+            <CurrencyInput label="Monthly rent" value={shared.monthlyRent} onChange={v => updateShared('monthlyRent', v)} />
+            <FieldError error={errors.monthlyRent} />
+          </div>
+          <div>
+            <CurrencyInput label="Monthly income" value={shared.monthlyIncome} onChange={v => updateShared('monthlyIncome', v)} />
+            <FieldError error={errors.monthlyIncome} />
+          </div>
         </div>
-        <CurrencyInput label="Current savings" value={s.savings} onChange={v => update('savings', v)} />
+        <div>
+          <CurrencyInput label="Current savings" value={shared.savings} onChange={v => updateShared('savings', v)} />
+          <FieldError error={errors.savings} />
+        </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <PercentInput label="Rent hike/yr" value={s.annualRentIncrease} onChange={v => update('annualRentIncrease', v)} hint="5-10%" />
-          <PercentInput label="Investment return" value={s.investmentReturn} onChange={v => update('investmentReturn', v)} hint="12-14%" />
+          <PercentInput label="Rent hike/yr" value={local.annualRentIncrease} onChange={v => updateLocal('annualRentIncrease', v)} hint="5-10%" />
+          <PercentInput label="Investment return" value={local.investmentReturn} onChange={v => updateLocal('investmentReturn', v)} hint="12-14%" />
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium text-foreground">Time horizon</label>
           <div className="flex items-center gap-3">
-            <Slider value={[s.years]} onValueChange={([v]) => update('years', v)} min={1} max={30} step={1} className="flex-1" />
-            <span className="text-sm font-mono font-semibold w-12 text-right">{s.years}yr</span>
+            <Slider value={[local.years]} onValueChange={([v]) => updateLocal('years', v)} min={1} max={30} step={1} className="flex-1" />
+            <span className="text-sm font-mono font-semibold w-12 text-right">{local.years}yr</span>
           </div>
         </div>
 
         <button
           onClick={() => setShowResults(true)}
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          disabled={blocked}
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:pointer-events-none"
         >
           <Wallet className="h-4 w-4" /> Analyse My Rent
         </button>
       </div>
 
-      {/* Results — progressive disclosure */}
       <AnimatePresence>
         {showResults && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {/* Affordability — always visible as summary card */}
+            {/* Verdict Card */}
+            <div className={`glass-card p-4 border ${
+              analysis.affordabilityVerdict === 'healthy' ? 'border-signal-buy/30' :
+              analysis.affordabilityVerdict === 'moderate' ? 'border-signal-neutral/30' : 'border-destructive/30'
+            }`}>
+              <h3 className="text-base font-bold text-foreground font-['Space_Grotesk'] mb-1">
+                {verdictMessages[analysis.affordabilityVerdict].title}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                {verdictMessages[analysis.affordabilityVerdict].desc}
+              </p>
+              <button
+                onClick={() => onNavigate('compare')}
+                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                See if buying beats renting <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Affordability */}
             <div className="glass-card p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -154,7 +207,7 @@ export default function RentTab() {
               </p>
             </div>
 
-            {/* Collapsible: Expense Breakdown */}
+            {/* Expense Breakdown */}
             <div className="glass-card overflow-hidden">
               <button onClick={() => toggleSection('expense')} className="w-full p-4 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -169,12 +222,12 @@ export default function RentTab() {
                 {expandedSection === 'expense' && (
                   <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
                     <div className="px-4 pb-4 space-y-0.5">
-                      <ResultRow label={`Total rent (${s.years}yr)`} value={formatLakhs(analysis.totalRent)} />
-                      <ResultRow label={`Rent at year ${s.years}`} value={`${formatINR(analysis.rentAtEnd)}/mo`} />
+                      <ResultRow label={`Total rent (${local.years}yr)`} value={formatLakhs(analysis.totalRent)} />
+                      <ResultRow label={`Rent at year ${local.years}`} value={`${formatINR(analysis.rentAtEnd)}/mo`} />
                       <div className="border-t border-border/30 my-1" />
                       <ResultRow label="Security deposit" value={formatINR(analysis.securityDeposit)} />
                       <ResultRow label="Brokerage" value={formatINR(analysis.brokerage)} />
-                      <ResultRow label="Day-1 cash needed" value={formatINR(analysis.securityDeposit + analysis.brokerage + s.monthlyRent)} bold />
+                      <ResultRow label="Day-1 cash needed" value={formatINR(analysis.securityDeposit + analysis.brokerage + shared.monthlyRent)} bold />
                       <p className="text-[11px] text-muted-foreground mt-2 italic">
                         Deposit: {cityData.avgRentDepositMonths}mo in {cityData.label}
                       </p>
@@ -184,7 +237,7 @@ export default function RentTab() {
               </AnimatePresence>
             </div>
 
-            {/* Collapsible: Investment Tracker */}
+            {/* Investment Tracker */}
             <div className="glass-card overflow-hidden">
               <button onClick={() => toggleSection('invest')} className="w-full p-4 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -205,7 +258,7 @@ export default function RentTab() {
                       <div className="border-t border-border/30 my-1" />
                       <ResultRow label="Total projected wealth" value={formatLakhs(analysis.totalWealth)} bold />
                       <p className="text-[11px] text-muted-foreground mt-2">
-                        Lump sum + SIP at {s.investmentReturn}% for {s.years}yr
+                        Lump sum + SIP at {local.investmentReturn}% for {local.years}yr
                       </p>
                     </div>
                   </motion.div>
