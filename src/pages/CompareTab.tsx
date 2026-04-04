@@ -266,23 +266,15 @@ export default function CompareTab() {
         )}
       </AnimatePresence>
 
-      {/* Results */}
+      {/* Results — Story Mode */}
       {result && !loading && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          <div ref={verdictRef}>
-            <VerdictCard result={result} />
-          </div>
-          <NetWorthChart snapshots={result.snapshots} plannedStay={localInputs.plannedStay} breakEvenYear={result.breakEvenYear} />
-          <LocationInsights result={result} />
-          <UniqueInsights result={result} />
-          <HonestBreakdown result={result} />
-          <ShareVerdict targetRef={verdictRef} title="My NestDecide Comparison" />
-          <div className="text-center pt-1">
-            <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">
-              ← Modify inputs
-            </button>
-          </div>
-        </motion.div>
+        <StoryResult
+          result={result}
+          profile={localInputs.userProfile}
+          city={shared.city}
+          monthlyIncome={shared.monthlyIncome}
+          onModify={() => setHasCalculated(false)}
+        />
       )}
     </div>
   );
