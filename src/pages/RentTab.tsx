@@ -78,22 +78,11 @@ export default function RentTab({ onNavigate }: RentTabProps) {
 
     const securityDeposit = shared.monthlyRent * cityData.avgRentDepositMonths;
     const brokerage = shared.monthlyRent * cityData.brokerageRentMonths;
-    const investmentCorpus = shared.savings * Math.pow(1 + local.investmentReturn / 100, local.years);
-    const monthlySurplus = Math.max(0, shared.monthlyIncome - shared.monthlyRent - shared.monthlyIncome * 0.4);
-
-    let sipCorpus = 0;
-    const monthlyReturn = local.investmentReturn / 100 / 12;
-    for (let m = 1; m <= local.years * 12; m++) {
-      sipCorpus = (sipCorpus + monthlySurplus) * (1 + monthlyReturn);
-    }
-
-    const totalWealth = investmentCorpus + sipCorpus;
     const rentAtEnd = shared.monthlyRent * Math.pow(1 + local.annualRentIncrease / 100, local.years);
 
     return {
       rentToIncome, maxAffordableRent, affordabilityVerdict,
-      totalRent, securityDeposit, brokerage,
-      investmentCorpus, monthlySurplus, sipCorpus, totalWealth, rentAtEnd,
+      totalRent, securityDeposit, brokerage, rentAtEnd,
     };
   }, [shared, local, cityData]);
 
