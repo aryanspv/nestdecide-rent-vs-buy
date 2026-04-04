@@ -48,6 +48,14 @@ const COMMON_TERMS = new Set([
   "area",
 ]);
 
+const GENERIC_PHRASES = [
+  "future demand beat the cost of waiting",
+  "cost of waiting",
+  "locality premium still looks richer than the financial payoff",
+  "renting stays cleaner financially",
+  "current locality premium still looks richer",
+];
+
 function humanize(value?: string) {
   return value ? value.replace(/_/g, " ") : "";
 }
@@ -83,11 +91,13 @@ function getSpecificityTerms(summary: any, profile?: any) {
   return Array.from(
     new Set([
       pickLocalityName(summary, profile).toLowerCase(),
+      ...extractTerms(pickLocalityName(summary, profile)),
       ...(profile?.betterValueAlternatives ?? []).map((value: string) => value.toLowerCase()),
       ...extractTerms(profile?.zone),
       ...extractTerms(profile?.segment),
       ...extractTerms(profile?.vibe),
       ...extractTerms(profile?.dominantTenantProfile),
+      ...extractTerms(profile?.summary),
       ...extractTerms(humanize(profile?.priceToRentPressure)),
       ...extractTerms(humanize(profile?.appreciationOutlook)),
       ...extractTerms(humanize(profile?.liquidity)),
@@ -105,6 +115,211 @@ function countSpecificityHits(text: string, summary: any, profile?: any) {
   return terms.reduce((count, term) => count + (lower.includes(term) ? 1 : 0), 0);
 }
 
+function buildHeuristicLocalityProfile(summary: any) {
+  const localityName = pickLocalityName(summary);
+  const normalizedLocality = localityName.toLowerCase();
+  const cityLabel = summary?.cityLabel || summary?.city || "the city";
+  const propertyPrice = Number(summary?.propertyPrice ?? 0);
+
+  if (!localityName || normalizedLocality === "not specified") {
+    return null;
+  }
+
+  if (/(lodhi|golf links|chanakyapuri|estate|enclave|defence colony)/.test(normalizedLocality)) {
+    return {
+      canonicalName: localityName,
+      zone: `Central ${cityLabel}`,
+      segment: "ultra_luxury",
+      vibe: "scarce trophy enclave with institutional adjacency and legacy address value",
+      dominantTenantProfile: "diplomats, legacy wealthy households and senior executives",
+      priceToRentPressure: "very_high",
+      appreciationOutlook: "steady",
+      liquidity: "strong",
+      safety: "strong",
+      commute: "excellent core-city access, but the buy premium is driven by scarcity and status more than rental economics",
+      infraCatalysts: ["core-city address premium", "institutional demand"],
+      risks: ["extreme capital values", "very low rental yield", "status-led overpayment"],
+      betterValueAlternatives: ["Jangpura"],
+      summary: "A trophy central market where scarcity and address value dominate the buy decision.",
+      matchConfidence: "low" as const,
+    };
+  }
+
+  if (/(burari|mukundpur|sant nagar)/.test(normalizedLocality)) {
+    return {
+      canonicalName: localityName,
+      zone: `North ${cityLabel} fringe`,
+      segment: "affordable",
+      vibe: "fringe affordability market with mixed plotted stock and uneven civic upkeep",
+      dominantTenantProfile: "budget families and first-time buyers stretching for ownership",
+      priceToRentPressure: "balanced",
+      appreciationOutlook: "patchy",
+      liquidity: "weaker",
+      safety: "mixed",
+      commute: "commute reliability is road-led and inconsistent because congestion and last-mile quality vary sharply by pocket",
+      infraCatalysts: ["affordability", "spillover demand from costlier north Delhi areas"],
+      risks: ["title and stock-quality variability", "weaker resale depth", "civic infrastructure gaps"],
+      betterValueAlternatives: ["Rohini Sector 24"],
+      summary: "A low-ticket fringe market where legality, stock quality and resale depth matter more than the entry price.",
+      matchConfidence: "low" as const,
+    };
+  }
+
+  if (/(shahdara|seemapuri|nangloi|dilshad|laxmi nagar)/.test(normalizedLocality)) {
+    return {
+      canonicalName: localityName,
+      zone: `${cityLabel} value belt`,
+      segment: "affordable",
+      vibe: "dense value market with mixed-use streets and uneven civic quality",
+      dominantTenantProfile: "value-conscious families and local workers",
+      priceToRentPressure: "balanced",
+      appreciationOutlook: "patchy",
+      liquidity: "moderate",
+      safety: "mixed",
+      commute: "mass transit helps, but last-mile congestion and older infrastructure reduce daily convenience",
+      infraCatalysts: ["affordability", "metro access"],
+      risks: ["older housing stock", "civic variability", "weaker premium resale demand"],
+      betterValueAlternatives: ["Vivek Vihar"],
+      summary: "A budget-led urban value market where block quality matters more than the area story.",
+      matchConfidence: "low" as const,
+    };
+  }
+
+  if (propertyPrice >= 80000000) {
+    return {
+      canonicalName: localityName,
+      zone: cityLabel,
+      segment: "ultra_luxury",
+      vibe: "high-ticket prestige micro-market with scarce supply",
+      dominantTenantProfile: "affluent owner-occupiers and executives",
+      priceToRentPressure: "very_high",
+      appreciationOutlook: "steady",
+      liquidity: "strong",
+      safety: "strong",
+      commute: "buyers pay more for prestige and access than for pure rent-vs-buy economics",
+      infraCatalysts: ["scarcity premium"],
+      risks: ["very low rental yield", "high carrying costs"],
+      betterValueAlternatives: ["a nearby premium pocket"],
+      summary: "A prestige-led market where the buy premium is hard to justify on yield alone.",
+      matchConfidence: "low" as const,
+    };
+  }
+
+  if (propertyPrice > 0 && propertyPrice <= 15000000) {
+    return {
+      canonicalName: localityName,
+      zone: cityLabel,
+      segment: "affordable",
+      vibe: "entry-level ownership market where block quality varies sharply",
+      dominantTenantProfile: "budget families and first-time buyers",
+      priceToRentPressure: "balanced",
+      appreciationOutlook: "patchy",
+      liquidity: "moderate",
+      safety: "mixed",
+      commute: "cheap entry does not remove congestion or service-quality friction",
+      infraCatalysts: ["affordability"],
+      risks: ["stock-quality variability", "resale depth risk"],
+      betterValueAlternatives: ["a nearby planned pocket"],
+      summary: "A value-led market where the exact building matters more than the micro-market average.",
+      matchConfidence: "low" as const,
+    };
+  }
+
+  return null;
+}
+
+function resolveLocalityProfile(summary: any) {
+  const providedProfile = summary?.localityProfile && typeof summary.localityProfile === "object"
+    ? summary.localityProfile
+    : null;
+  const heuristicProfile = buildHeuristicLocalityProfile(summary);
+
+  if (!providedProfile && !heuristicProfile) {
+    return null;
+  }
+
+  return {
+    ...(heuristicProfile ?? {}),
+    ...(providedProfile ?? {}),
+  };
+}
+
+function enrichSummaryWithLocalityProfile(summary: any) {
+  const localityProfile = resolveLocalityProfile(summary);
+
+  return {
+    ...summary,
+    localityProfile,
+    localitySummary: localityProfile?.summary ?? summary?.localitySummary ?? null,
+  };
+}
+
+function getMarketArchetype(summary: any, profile?: any) {
+  if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
+    return "prestige" as const;
+  }
+
+  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
+    return "value" as const;
+  }
+
+  if (profile?.segment === "premium" || profile?.segment === "upper_mid") {
+    return "convenience" as const;
+  }
+
+  const propertyPrice = Number(summary?.propertyPrice ?? 0);
+
+  if (propertyPrice >= 80000000) return "prestige" as const;
+  if (propertyPrice > 0 && propertyPrice <= 15000000) return "value" as const;
+  return "convenience" as const;
+}
+
+function hasArchetypeSignal(text: string, summary: any, profile?: any) {
+  const lower = text.toLowerCase();
+  const archetype = getMarketArchetype(summary, profile);
+
+  if (archetype === "prestige") {
+    return /(scarcity|status|yield|central|diplomat|luxury|premium|institutional|trophy)/.test(lower);
+  }
+
+  if (archetype === "value") {
+    return /(stock|building|civic|congestion|resale|liquidity|unauthorized|title|legal|maintenance|afford|fringe|lane)/.test(lower);
+  }
+
+  return /(commute|demand|exit|yield|liquidity|premium|mobility)/.test(lower);
+}
+
+function hasForbiddenArchetypeSignal(text: string, summary: any, profile?: any) {
+  const lower = text.toLowerCase();
+  const archetype = getMarketArchetype(summary, profile);
+
+  if (archetype === "prestige") {
+    return /(unauthorized|title risk|lane by lane|block quality|cheap entry|civic gaps)/.test(lower);
+  }
+
+  if (archetype === "value") {
+    return /(diplomatic enclave|scarcity premium|status pricing|trophy market|institutional belt)/.test(lower);
+  }
+
+  return false;
+}
+
+function isGenericBoilerplate(text: string) {
+  const lower = text.toLowerCase();
+  return GENERIC_PHRASES.some((phrase) => lower.includes(phrase));
+}
+
+function getRiskTheme(profile?: any) {
+  const text = `${profile?.summary ?? ""} ${(profile?.risks ?? []).join(" ")}`.toLowerCase();
+
+  if (/(unauthorized|title|legal)/.test(text)) return "legality";
+  if (/(scarcity|yield|status|prestige|capital value)/.test(text)) return "scarcity";
+  if (/(traffic|congestion|commute)/.test(text)) return "congestion";
+  if (/(stock|maintenance|repair|older housing)/.test(text)) return "stock quality";
+  if (/(resale|liquidity|exit)/.test(text)) return "exit";
+  return "micro-market";
+}
+
 function buildPromptAnalysis(summary: any) {
   const profile = summary?.localityProfile;
   if (!profile) return null;
@@ -114,16 +329,17 @@ function buildPromptAnalysis(summary: any) {
   const pressure = humanize(profile?.priceToRentPressure) || "unclear";
   const stay = summary?.plannedStay ? `${summary.plannedStay}-year hold` : "current hold period";
   const alternative = profile?.betterValueAlternatives?.[0] || null;
+  const archetype = getMarketArchetype(summary, profile);
 
-  const decisionFrame = profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high"
+  const decisionFrame = archetype === "prestige"
     ? "Prestige market: test whether status, scarcity and centrality justify yield compression and extreme carrying costs."
-    : profile?.segment === "affordable" || profile?.segment === "mid_market"
+    : archetype === "value"
       ? "Value market: test whether cheap entry survives lane-level quality risk, civic variability, congestion and weaker exits."
       : "Convenience-led market: test whether livability and demand are strong enough to outrun the buy premium.";
 
-  const lifestyleTension = profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high"
+  const lifestyleTension = archetype === "prestige"
     ? `${localityName} may feel exceptional to live in, but buyers are usually prepaying for address value rather than return.`
-    : profile?.segment === "affordable" || profile?.segment === "mid_market"
+    : archetype === "value"
       ? `${localityName} can look sensible on price, but daily friction comes from stock quality, congestion and uneven civic quality.`
       : `${localityName} sits in the middle: commute, renter demand and exit depth matter more than headline prestige.`;
 
@@ -145,10 +361,21 @@ function buildPromptAnalysis(summary: any) {
     dominantTenantProfile: profile?.dominantTenantProfile ?? null,
     commuteRead: profile?.commute || summary?.mobilityExplanation || null,
     decisionFrame,
+    marketArchetype: archetype,
     moneyTension: `${localityName} carries ${pressure} buy-vs-rent pressure; for this ${stay}, the current numbers show ${summary?.netWorthDiffFormatted ?? "a material gap"} of net-worth underperformance versus renting.`,
     lifestyleTension,
     exitTension,
     benchmarkAlternative: alternative,
+    requiredSignals: archetype === "prestige"
+      ? ["scarcity premium", "yield compression", "status pricing", "carrying cost", "centrality"]
+      : archetype === "value"
+        ? ["stock quality", "civic variability", "congestion", "resale depth", "title or legality risk when relevant"]
+        : ["commute fit", "renter demand", "exit depth", "premium versus convenience"],
+    forbiddenSignals: archetype === "prestige"
+      ? ["cheap entry", "lane-level stock quality", "unauthorized colony risk unless explicitly provided"]
+      : archetype === "value"
+        ? ["scarcity premium", "diplomatic enclave", "status pricing"]
+        : [],
     mustUseFacts: [
       profile?.zone,
       segment,
@@ -182,13 +409,14 @@ function formatCompactInr(value?: number) {
 
 function buildLocalityHeadline(summary: any, profile: any) {
   const localityName = pickLocalityName(summary, profile);
+  const riskTheme = getRiskTheme(profile);
 
   if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
     return `${localityName}: status premium burns ${summary?.netWorthDiffFormatted ?? "value"}.`;
   }
 
   if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
-    return `${localityName}: cheap entry, patchy resale, weak buy case.`;
+    return `${localityName}: low entry hides ${riskTheme} and exit risk.`;
   }
 
   return `${localityName}: locality premium still trails renting.`;
@@ -200,6 +428,7 @@ function buildLocalityTldr(summary: any, profile: any) {
   const priceText = formatCompactInr(summary?.propertyPrice);
   const alternative = profile?.betterValueAlternatives?.[0];
   const stay = `${summary?.plannedStay ?? "short"}-year`;
+  const riskTheme = getRiskTheme(profile);
 
   if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
     return cleanSentence(
@@ -209,7 +438,7 @@ function buildLocalityTldr(summary: any, profile: any) {
 
   if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
     return cleanSentence(
-      `${localityName} looks affordable versus pricier parts of ${zone}, but this kind of value market is won or lost on building quality, congestion and resale depth, not the listing price alone. For a ${stay} stay, cheap entry still does not offset the risk of uneven stock and patchy exits${alternative ? `, so compare ${alternative} too.` : "."}`
+      `${localityName} is an affordability-led pocket in ${zone}, so a ${priceText} buy only works if the exact block is legally clean, liveable and resaleable. The low ticket still hides ${riskTheme}, congestion and weaker exit depth for a ${stay} hold${alternative ? `, so compare ${alternative} too.` : "."}`
     );
   }
 
@@ -220,6 +449,7 @@ function buildLocalityTldr(summary: any, profile: any) {
 
 function buildLocalityRiskCallout(summary: any, profile: any) {
   const localityName = pickLocalityName(summary, profile);
+  const risks = listToText(profile?.risks, 2);
 
   if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
     return cleanSentence(
@@ -241,7 +471,7 @@ function buildLocalityRiskCallout(summary: any, profile: any) {
 
   if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
     return cleanSentence(
-      `${localityName} can trap buyers with cheap-looking entry pricing if block quality is weak, because even a ${formatCompactInr(summary?.monthlyEmi)} EMI does not protect you from costly repairs, slower resale and congestion-heavy daily life.`
+      `${localityName} can trap buyers with cheap-looking entry pricing because ${risks || "stock quality and resale depth"} can still make a ${formatCompactInr(summary?.monthlyEmi)} EMI expensive to unwind.`
     );
   }
 
@@ -296,7 +526,7 @@ function ensureString(value: unknown) {
 
 function isSpecificHeadline(value: string, summary: any, profile?: any) {
   const localityName = pickLocalityName(summary, profile).toLowerCase();
-  return !!value && (!localityName || value.toLowerCase().includes(localityName));
+  return !!value && !isGenericBoilerplate(value) && !hasForbiddenArchetypeSignal(value, summary, profile) && (!localityName || value.toLowerCase().includes(localityName)) && hasArchetypeSignal(value, summary, profile);
 }
 
 function isSpecificTldr(value: string, summary: any, profile?: any) {
@@ -306,7 +536,7 @@ function isSpecificTldr(value: string, summary: any, profile?: any) {
   const lower = value.toLowerCase();
   const mentionsLocality = !localityName || lower.includes(localityName);
 
-  return mentionsLocality && countSpecificityHits(value, summary, profile) >= 2 && /₹|\d/.test(value);
+  return mentionsLocality && !isGenericBoilerplate(value) && !hasForbiddenArchetypeSignal(value, summary, profile) && hasArchetypeSignal(value, summary, profile) && countSpecificityHits(value, summary, profile) >= 2 && /₹|\d/.test(value);
 }
 
 function isSpecificRisk(value: string, summary: any, profile?: any) {
@@ -316,7 +546,7 @@ function isSpecificRisk(value: string, summary: any, profile?: any) {
   const lower = value.toLowerCase();
   const mentionsLocality = !localityName || lower.includes(localityName);
 
-  return mentionsLocality && (/₹|\d/.test(value) || /(yield|liquidity|safety|resale|commute|premium)/.test(lower));
+  return mentionsLocality && !hasForbiddenArchetypeSignal(value, summary, profile) && hasArchetypeSignal(value, summary, profile) && (/₹|\d/.test(value) || /(yield|liquidity|safety|resale|commute|premium|title|legal|stock|congestion)/.test(lower));
 }
 
 function isSpecificAction(value: string, summary: any, profile?: any) {
@@ -327,6 +557,9 @@ function isSpecificAction(value: string, summary: any, profile?: any) {
   const alternative = profile?.betterValueAlternatives?.[0]?.toLowerCase();
 
   return (
+    !isGenericBoilerplate(value) &&
+    !hasForbiddenArchetypeSignal(value, summary, profile) &&
+    hasArchetypeSignal(value, summary, profile) &&
     (localityName && lower.includes(localityName)) ||
     (alternative && lower.includes(alternative)) ||
     /₹|\d/.test(value) ||
@@ -377,7 +610,8 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const promptAnalysis = buildPromptAnalysis(summary);
+    const enrichedSummary = enrichSummaryWithLocalityProfile(summary);
+    const promptAnalysis = buildPromptAnalysis(enrichedSummary);
 
     const systemPrompt = `You are NestDecide's lead Indian residential micro-market analyst.
 
@@ -397,6 +631,9 @@ CRITICAL LOCALITY RULES:
 - Tie the financial verdict to the micro-market reason. Explain WHY the locality changes the math, not just WHAT the math is.
 - For prestige markets, focus on scarcity premium, yield compression, carrying cost and status pricing.
 - For affordable/value markets, focus on building quality, civic variability, congestion, hidden maintenance and exit liquidity.
+- For fringe affordability pockets like Burari, explicitly pressure-test legality/title quality, civic consistency, resale depth and road-led commute friction.
+- For trophy central pockets like Lodhi Estate, explicitly pressure-test scarcity, diplomatic or institutional demand, address premium and ultra-low yield.
+- Never describe Burari-like value pockets as prestige-led, and never describe Lodhi Estate-like trophy pockets as cheap-entry or lane-level quality stories.
 - Never invent facts beyond the provided JSON.
 - Avoid reusing generic phrasing like “renting still leaves you ahead” unless you add the locality-specific why.
 
@@ -424,7 +661,7 @@ Rules:
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `Locality: ${summary.locality} in ${summary.cityLabel}\n\nAuthoritative locality intelligence (if present, use this as source of truth):\n${JSON.stringify(summary.localityProfile ?? null, null, 2)}\n\nDerived prompt analysis (use this to focus, but never contradict the source data):\n${JSON.stringify(promptAnalysis, null, 2)}\n\nFull summary:\n${JSON.stringify(summary, null, 2)}`,
+            content: `Locality: ${enrichedSummary.locality} in ${enrichedSummary.cityLabel}\n\nResolved locality intelligence (client profile plus backend inference when needed):\n${JSON.stringify(enrichedSummary.localityProfile ?? null, null, 2)}\n\nDerived prompt analysis (use this to focus, but never contradict the source data):\n${JSON.stringify(promptAnalysis, null, 2)}\n\nFull summary:\n${JSON.stringify(enrichedSummary, null, 2)}`,
           },
         ],
         temperature: 0.2,
@@ -503,7 +740,7 @@ Rules:
 
     if (!response || !response.ok) {
       console.error("All models failed, using fallback insights");
-      const fallback = buildFallbackInsights(summary);
+      const fallback = buildFallbackInsights(enrichedSummary);
       return new Response(JSON.stringify(fallback), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -522,7 +759,7 @@ Rules:
       }
     }
 
-    const insights = finalizeInsights(summary, rawInsights);
+    const insights = finalizeInsights(enrichedSummary, rawInsights);
 
     return new Response(JSON.stringify(insights), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
