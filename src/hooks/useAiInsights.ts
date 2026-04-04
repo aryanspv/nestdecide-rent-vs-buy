@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CalculationResult, UserInputs } from '@/lib/calculations';
 import { formatLakhs } from '@/lib/formatCurrency';
+import { getCityData } from '@/lib/locationData';
 
 export interface AiInsights {
   headline: string;
