@@ -43,8 +43,8 @@ Return a JSON object with exactly these fields:
 {
   "headline": "One punchy sentence (max 15 words). Reference their specific locality/city and a striking number.",
   "narrative": "3-4 sentences. Weave together locality context, lifestyle factors, AND financial data. Mention specific locality characteristics (infrastructure, market trends, livability). Cite ₹ amounts, percentages, years. If locality is specified, at least 1 sentence must be locality-specific.",
-  "surprises": ["2-3 genuinely counter-intuitive findings that cross-reference locality/lifestyle with financial data. E.g., 'Your ${commuteDistance}km commute from ${locality} costs ₹X/month — that's Y% of your rent savings from not buying.' Each max 30 words."],
-  "actionItems": ["3-4 hyper-specific next steps. At least one must reference their locality (e.g., 'Check upcoming metro connectivity in ${locality}', 'Compare prices in nearby ${alternative_locality}'). Include concrete ₹ amounts and timelines."],
+  "surprises": ["2-3 genuinely counter-intuitive findings that cross-reference locality/lifestyle with financial data. E.g., 'Your Xkm commute from [locality] costs ₹Y/month — that is Z% of your rent savings from not buying.' Each max 30 words."],
+  "actionItems": ["3-4 hyper-specific next steps. At least one must reference their locality (e.g., 'Check upcoming metro connectivity in [locality]', 'Compare prices in nearby [alternative area]'). Include concrete ₹ amounts and timelines."],
   "riskCallout": "2 sentences about their biggest risk. Combine financial stress test data with locality/lifestyle factors. E.g., if AQI is poor, mention health costs; if crime grade is D, mention insurance; if traffic is bad, mention productivity loss."
 }
 
