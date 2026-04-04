@@ -16,7 +16,6 @@ interface RentTabProps {
 
 interface RentLocalState {
   annualRentIncrease: number;
-  investmentReturn: number;
   years: number;
 }
 
