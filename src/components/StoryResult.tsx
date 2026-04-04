@@ -1,21 +1,23 @@
 import { motion } from 'framer-motion';
 import { useRef } from 'react';
-import { TrendingUp, TrendingDown, ArrowRightLeft, Lightbulb, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRightLeft, ChevronDown } from 'lucide-react';
 import AnimatedNumber from './AnimatedNumber';
 import { CalculationResult } from '@/lib/calculations';
 import { formatLakhs, formatINR } from '@/lib/formatCurrency';
 import NetWorthChart from './NetWorthChart';
-import LocationInsights from './LocationInsights';
-import UniqueInsights from './UniqueInsights';
-import HonestBreakdown from './HonestBreakdown';
-import ShareVerdict from './ShareVerdict';
 import PeopleLikeYou from './PeopleLikeYou';
+import AiInsightsCard from './AiInsightsCard';
+import ShareVerdict from './ShareVerdict';
+import type { AiInsights } from '@/hooks/useAiInsights';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import LocationInsights from './LocationInsights';
+import UniqueInsights from './UniqueInsights';
+import HonestBreakdown from './HonestBreakdown';
 
 interface StoryResultProps {
   result: CalculationResult;
@@ -23,198 +25,126 @@ interface StoryResultProps {
   city: string;
   monthlyIncome: number;
   onModify: () => void;
+  aiInsights: AiInsights | null;
+  aiLoading: boolean;
+  aiError: string | null;
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
 
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.15 } },
+  show: { transition: { staggerChildren: 0.12 } },
 };
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-function getSurprise(result: CalculationResult): { title: string; text: string } | null {
-  const { uniqueInsights, overallVerdict } = result;
-
-  // Pick the single most unexpected finding
-  if (uniqueInsights.stressTest.riskLevel === 'danger') {
-    return {
-      title: 'Your EMI burden is dangerously high',
-      text: `At ${uniqueInsights.stressTest.burdenPctCurrent.toFixed(0)}% of income, even a 1% rate hike would push you to ${uniqueInsights.stressTest.burdenPctPlus1.toFixed(0)}%. Build a larger emergency fund before committing.`,
-    };
-  }
-
-  if (uniqueInsights.freedomMoney.delta > 20000) {
-    return {
-      title: 'Renting gives you significantly more monthly freedom',
-      text: `You'd have ${formatINR(uniqueInsights.freedomMoney.delta)} more per month for lifestyle spending if you rent. That's ${formatINR(uniqueInsights.freedomMoney.delta * 12)}/year — enough for a vacation or serious investing.`,
-    };
-  }
-
-  if (uniqueInsights.rentTrapYear && uniqueInsights.rentTrapYear <= 3) {
-    return {
-      title: 'You hit the rent trap surprisingly fast',
-      text: `By Year ${uniqueInsights.rentTrapYear}, your cumulative rent exceeds the total transaction cost of buying. After that, every month of rent is money that could've built equity.`,
-    };
-  }
-
-  if (overallVerdict === 'NEUTRAL') {
-    return {
-      title: 'This is genuinely a coin-flip decision',
-      text: 'The financial difference between renting and buying is negligible at your tenure. Your decision should be driven by lifestyle: do you value flexibility or stability more?',
-    };
-  }
-
-  return null;
-}
-
-export default function StoryResult({ result, profile, city, monthlyIncome, onModify }: StoryResultProps) {
+export default function StoryResult({
+  result, profile, city, monthlyIncome, onModify,
+  aiInsights, aiLoading, aiError,
+}: StoryResultProps) {
   const verdictRef = useRef<HTMLDivElement>(null);
-  const { overallVerdict, netWorthDiffAtTenure, breakEvenYear, plannedStay, verdictReasons } = result;
+  const { overallVerdict, netWorthDiffAtTenure, breakEvenYear, plannedStay, monthlyEmi } = result;
 
   const verdictConfig = {
     BUY: {
       label: 'BUY',
-      color: 'text-signal-buy-foreground bg-signal-buy-bg border-signal-buy/30',
+      gradient: 'from-signal-buy/20 to-signal-buy/5',
+      border: 'border-signal-buy/30',
+      tagBg: 'bg-signal-buy text-primary-foreground',
       icon: TrendingUp,
-      headline: `Buying builds more wealth over ${plannedStay} years`,
+      headline: `Buying builds ₹${(Math.abs(netWorthDiffAtTenure) / 1e5).toFixed(0)}L more wealth`,
     },
     RENT: {
       label: 'RENT',
-      color: 'text-signal-rent-foreground bg-signal-rent-bg border-signal-rent/30',
+      gradient: 'from-signal-rent/20 to-signal-rent/5',
+      border: 'border-signal-rent/30',
+      tagBg: 'bg-signal-rent text-primary-foreground',
       icon: TrendingDown,
       headline: breakEvenYear
-        ? `Renting wins until Year ${breakEvenYear}`
-        : `Renting is the smarter path for this tenure`,
+        ? `Renting saves you money until Year ${breakEvenYear}`
+        : `Renting is the smarter financial path`,
     },
     NEUTRAL: {
-      label: 'IT DEPENDS',
-      color: 'text-signal-neutral-foreground bg-signal-neutral-bg border-signal-neutral/30',
+      label: 'TOSS-UP',
+      gradient: 'from-signal-neutral/20 to-signal-neutral/5',
+      border: 'border-signal-neutral/30',
+      tagBg: 'bg-signal-neutral text-signal-neutral-foreground',
       icon: ArrowRightLeft,
-      headline: `It's a close call at ${plannedStay} years`,
+      headline: `It's nearly a coin flip at ${plannedStay} years`,
     },
   };
 
   const config = verdictConfig[overallVerdict];
   const Icon = config.icon;
-  const surprise = getSurprise(result);
+  const emiBurden = Math.round((monthlyEmi / monthlyIncome) * 100);
 
   return (
-    <motion.div
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-      className="space-y-5"
-    >
-      {/* 1. HERO VERDICT */}
+    <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
+
+      {/* ── HERO VERDICT ── */}
       <motion.div
         ref={verdictRef}
         variants={fadeUp}
-        className={`terminal-card border-2 ${config.color} p-6 md:p-8 text-center space-y-4`}
+        className={`relative overflow-hidden rounded-2xl border-2 ${config.border} bg-gradient-to-br ${config.gradient} backdrop-blur-sm`}
       >
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 border border-border/50">
-          <Icon className="h-5 w-5" />
-          <span className="text-sm font-bold tracking-widest uppercase">{config.label}</span>
-        </div>
+        {/* Decorative glow */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
-          {config.headline}
-        </h2>
+        <div className="relative p-6 md:p-8 space-y-5">
+          {/* Tag */}
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black tracking-[0.2em] uppercase ${config.tagBg}`}>
+              <Icon className="h-3.5 w-3.5" />
+              {config.label}
+            </span>
+            <span className="text-xs text-muted-foreground">{plannedStay}-year horizon</span>
+          </div>
 
-        <div className="flex justify-center gap-6 flex-wrap">
-          <div className="text-center">
-            <p className="data-label mb-1">Wealth difference</p>
-            <AnimatedNumber
-              value={Math.abs(netWorthDiffAtTenure)}
-              formatter={formatLakhs}
-              className="text-3xl font-bold text-foreground font-mono"
-            />
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {netWorthDiffAtTenure > 0 ? 'Renting wins' : 'Buying wins'}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="data-label mb-1">Break-even</p>
-            <AnimatedNumber
-              value={breakEvenYear ?? 30}
-              formatter={(n) => breakEvenYear ? `Year ${n}` : 'Never'}
-              className="text-3xl font-bold text-foreground font-mono"
-            />
-          </div>
-          <div className="text-center">
-            <p className="data-label mb-1">Monthly EMI</p>
-            <AnimatedNumber
-              value={Math.round(result.monthlyEmi)}
-              formatter={(n) => formatINR(n)}
-              className="text-3xl font-bold text-foreground font-mono"
-            />
+          {/* Headline */}
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight font-['Space_Grotesk']">
+            {config.headline}
+          </h2>
+
+          {/* Key metrics row */}
+          <div className="grid grid-cols-3 gap-3">
+            <MetricPill label="Wealth gap" value={Math.abs(netWorthDiffAtTenure)} formatter={formatLakhs} sub={netWorthDiffAtTenure > 0 ? 'Renting wins' : 'Buying wins'} />
+            <MetricPill label="Monthly EMI" value={Math.round(monthlyEmi)} formatter={v => formatINR(v, true)} sub={`${emiBurden}% of income`} alert={emiBurden > 50} />
+            <MetricPill label="Break-even" value={breakEvenYear ?? 0} formatter={n => breakEvenYear ? `Yr ${n}` : '30+'} sub={breakEvenYear ? 'Buy catches up' : 'Never catches up'} />
           </div>
         </div>
       </motion.div>
 
-      {/* 2. HERE'S WHY — top reasons */}
-      <motion.div variants={fadeUp} className="terminal-card p-5 md:p-6 space-y-3">
-        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Here's why</h3>
-        <div className="space-y-2">
-          {verdictReasons.slice(0, 3).map((reason, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + i * 0.12 }}
-              className="flex items-start gap-3 text-sm text-muted-foreground"
-            >
-              <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
-                {i + 1}
-              </span>
-              <span className="leading-relaxed">{reason}</span>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* 3. CHART */}
+      {/* ── AI INSIGHTS ── */}
       <motion.div variants={fadeUp}>
-        <NetWorthChart
-          snapshots={result.snapshots}
-          plannedStay={plannedStay}
-          breakEvenYear={breakEvenYear}
-        />
+        <AiInsightsCard insights={aiInsights} loading={aiLoading} error={aiError} />
       </motion.div>
 
-      {/* 4. WHAT SURPRISED US */}
-      {surprise && (
-        <motion.div variants={fadeUp} className="terminal-card p-5 md:p-6 border-l-4 border-l-primary/50">
-          <div className="flex items-center gap-2 mb-2">
-            <Lightbulb className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold text-foreground">What surprised us</h3>
-          </div>
-          <p className="text-base font-semibold text-foreground mb-1">{surprise.title}</p>
-          <p className="text-sm text-muted-foreground leading-relaxed">{surprise.text}</p>
-        </motion.div>
-      )}
+      {/* ── NET WORTH CHART ── */}
+      <motion.div variants={fadeUp}>
+        <NetWorthChart snapshots={result.snapshots} plannedStay={plannedStay} breakEvenYear={breakEvenYear} />
+      </motion.div>
 
-      {/* 5. PEOPLE LIKE YOU */}
+      {/* ── PEOPLE LIKE YOU ── */}
       <motion.div variants={fadeUp}>
         <PeopleLikeYou profile={profile} city={city} monthlyIncome={monthlyIncome} />
       </motion.div>
 
-      {/* 6. DEEP DIVE (collapsible) */}
+      {/* ── DEEP DIVE (collapsed) ── */}
       <motion.div variants={fadeUp}>
         <Accordion type="single" collapsible className="space-y-2">
-          <AccordionItem value="location" className="terminal-card border-none">
-            <AccordionTrigger className="px-5 py-4 text-sm font-bold text-foreground hover:no-underline">
-              Location & Lifestyle Intelligence
+          <AccordionItem value="location" className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <AccordionTrigger className="px-5 py-3.5 text-sm font-bold text-foreground hover:no-underline [&[data-state=open]>svg]:rotate-180">
+              Location & Lifestyle
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-5">
               <LocationInsights result={result} city={city} />
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="insights" className="terminal-card border-none">
-            <AccordionTrigger className="px-5 py-4 text-sm font-bold text-foreground hover:no-underline">
+          <AccordionItem value="insights" className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <AccordionTrigger className="px-5 py-3.5 text-sm font-bold text-foreground hover:no-underline [&[data-state=open]>svg]:rotate-180">
               Deep Insights
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-5">
@@ -222,8 +152,8 @@ export default function StoryResult({ result, profile, city, monthlyIncome, onMo
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="breakdown" className="terminal-card border-none">
-            <AccordionTrigger className="px-5 py-4 text-sm font-bold text-foreground hover:no-underline">
+          <AccordionItem value="breakdown" className="rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <AccordionTrigger className="px-5 py-3.5 text-sm font-bold text-foreground hover:no-underline [&[data-state=open]>svg]:rotate-180">
               Honest Breakdown
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-5">
@@ -233,18 +163,41 @@ export default function StoryResult({ result, profile, city, monthlyIncome, onMo
         </Accordion>
       </motion.div>
 
-      {/* SHARE + MODIFY */}
-      <motion.div variants={fadeUp} className="space-y-3">
+      {/* ── SHARE & MODIFY ── */}
+      <motion.div variants={fadeUp} className="space-y-3 pb-2">
         <ShareVerdict targetRef={verdictRef} title="My NestDecide Comparison" />
-        <div className="text-center pt-1">
+        <div className="text-center">
           <button
             onClick={onModify}
             className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
           >
-            ← Modify inputs
+            ← Change inputs & recalculate
           </button>
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+/* ── Small metric pill ── */
+function MetricPill({
+  label, value, formatter, sub, alert = false,
+}: {
+  label: string;
+  value: number;
+  formatter: (n: number) => string;
+  sub: string;
+  alert?: boolean;
+}) {
+  return (
+    <div className="rounded-xl bg-background/60 backdrop-blur-sm border border-border/30 p-3 text-center space-y-1">
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{label}</p>
+      <AnimatedNumber
+        value={value}
+        formatter={formatter}
+        className={`text-lg md:text-xl font-bold font-mono ${alert ? 'text-destructive' : 'text-foreground'}`}
+      />
+      <p className="text-[10px] text-muted-foreground leading-tight">{sub}</p>
+    </div>
   );
 }
