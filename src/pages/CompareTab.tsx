@@ -279,6 +279,9 @@ export default function CompareTab() {
           city={shared.city}
           monthlyIncome={shared.monthlyIncome}
           onModify={() => setHasCalculated(false)}
+          aiInsights={ai.insights}
+          aiLoading={ai.loading}
+          aiError={ai.error}
         />
       )}
     </div>
