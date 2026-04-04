@@ -3,20 +3,29 @@
 
 export interface CityData {
   label: string;
-  stampDutyPct: number; // % of property price
-  registrationPct: number; // % of property price
-  avgRentalYieldPct: number; // annual rent / property price
-  propertyTaxPct: number; // annual % of property value (approx)
-  avgAppreciationRange: [number, number]; // min-max %
-  bachelorFriendliness: number; // 1-5 (5 = very friendly)
-  avgSafetyIndex: number; // 1-5
-  avgLiquidityScore: number; // 1-5 (how quickly properties sell)
-  avgRentDepositMonths: number; // typical security deposit in months
-  brokerageBuyPct: number; // buyer brokerage % of property price
-  brokerageRentMonths: number; // rent brokerage in months of rent
-  avgCommutePerKmMonthly: number; // ₹ per km per month (fuel/metro avg)
-  tenantProtectionScore: number; // 1-5 (5 = strong tenant protection laws)
-  avgRelocationFreqYears: number; // average years before landlord-driven relocation
+  stampDutyPct: number;
+  registrationPct: number;
+  avgRentalYieldPct: number;
+  propertyTaxPct: number;
+  avgAppreciationRange: [number, number];
+  bachelorFriendliness: number;
+  avgSafetyIndex: number;
+  avgLiquidityScore: number;
+  avgRentDepositMonths: number;
+  brokerageBuyPct: number;
+  brokerageRentMonths: number;
+  avgCommutePerKmMonthly: number;
+  tenantProtectionScore: number;
+  avgRelocationFreqYears: number;
+  // Livability data (NCRB + TomTom + AQI)
+  crimeRatePerLakh: number; // total IPC crimes per lakh population (NCRB 2022)
+  topCrimes: string[];
+  crimeSafetyGrade: 'A' | 'B' | 'C' | 'D';
+  trafficCongestionIndex: number; // 1-10 (10 = worst, TomTom 2023)
+  avgCommuteTimeMins: number; // avg one-way commute minutes
+  peakHourDelayPct: number; // % extra time during peak vs free-flow
+  avgAQI: number; // annual average AQI (WHO/CPCB)
+  aqiCategory: 'Good' | 'Satisfactory' | 'Moderate' | 'Poor' | 'Very Poor';
 }
 
 export const CITY_DATA: Record<string, CityData> = {
