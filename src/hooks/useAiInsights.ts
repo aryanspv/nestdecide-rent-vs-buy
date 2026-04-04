@@ -6,8 +6,7 @@ import { getCityData } from '@/lib/locationData';
 
 export interface AiInsights {
   headline: string;
-  narrative: string;
-  surprises: string[];
+  tldr: string;
   actionItems: string[];
   riskCallout: string;
 }
@@ -16,7 +15,6 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
   const staySnap = result.snapshots[Math.min(inputs.plannedStay, 30) - 1];
   const cityData = getCityData(inputs.city);
   return {
-    // All user inputs
     city: inputs.city,
     cityLabel: cityData.label,
     locality: inputs.locality || 'not specified',
@@ -41,7 +39,6 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
     safetyPriority: inputs.safetyPriority,
     resaleConcern: inputs.resaleConcern,
 
-    // Key calculation results
     verdict: result.overallVerdict,
     financialVerdict: result.financialVerdict,
     monthlyEmi: Math.round(result.monthlyEmi),
@@ -58,37 +55,31 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
     totalMaintenanceCost: Math.round(result.totalMaintenanceCost),
     totalTaxBenefit: Math.round(result.totalTaxBenefit),
 
-    // Transaction costs
     stampDutyCost: Math.round(result.stampDutyCost),
     registrationCost: Math.round(result.registrationCost),
     totalTransactionCost: Math.round(result.totalTransactionCost),
     propertyTaxTotal: Math.round(result.propertyTaxTotal),
     rentalDepositLocked: Math.round(result.rentalDepositLocked),
 
-    // Net worth at planned stay
     buyNetWorthAtStay: staySnap ? Math.round(staySnap.buyNetWorth) : 0,
     rentNetWorthAtStay: staySnap ? Math.round(staySnap.rentNetWorth) : 0,
     rentAtEndOfStay: staySnap ? Math.round(inputs.monthlyRent * Math.pow(1 + inputs.annualRentIncrease / 100, inputs.plannedStay)) : 0,
 
-    // Stress test
     stressTestRisk: result.uniqueInsights.stressTest.riskLevel,
     stressTestBurden: result.uniqueInsights.stressTest.burdenPctCurrent,
     emergencyRunwayMonths: result.uniqueInsights.stressTest.emergencyRunwayMonths,
     emiIfRatePlus2: Math.round(result.uniqueInsights.stressTest.emiAtPlus2),
     burdenIfRatePlus2: Math.round(result.uniqueInsights.stressTest.burdenPctPlus2),
 
-    // Freedom money & milestones
     freedomMoneyBuyer: result.uniqueInsights.freedomMoney.buyer,
     freedomMoneyRenter: result.uniqueInsights.freedomMoney.renter,
     freedomMoneyDelta: Math.round(result.uniqueInsights.freedomMoney.delta),
     rentTrapYear: result.uniqueInsights.rentTrapYear,
     opportunityCostPerMonth: Math.round(result.uniqueInsights.opportunityCostPerMonth),
 
-    // Landlord risk
     landlordProtection: result.uniqueInsights.landlordRisk.protectionLevel,
     relocationFreqYears: result.uniqueInsights.landlordRisk.relocationFreqYears,
 
-    // Location intelligence
     locationVerdict: result.locationInsight.locationVerdict,
     locationScore: result.locationInsight.locationScore,
     rentalYieldImplied: result.locationInsight.rentalYield.impliedYield,
@@ -96,14 +87,12 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
     liquidityRisk: result.locationInsight.liquidity.riskLevel,
     mobilityScore: result.locationInsight.mobility.score,
 
-    // Wealth milestones (key ones)
     milestones: result.uniqueInsights.milestones
       .filter(m => m.buyYear !== null || m.rentYear !== null)
       .map(m => ({ label: m.label, buyYear: m.buyYear, rentYear: m.rentYear, faster: m.fasterPath })),
 
     verdictReasons: result.verdictReasons,
 
-    // City livability data for locality-specific insights
     cityLivability: {
       crimeRatePerLakh: cityData.crimeRatePerLakh,
       topCrimes: cityData.topCrimes,
@@ -117,7 +106,6 @@ function buildSummary(result: CalculationResult, inputs: UserInputs) {
       avgRentDepositMonths: cityData.avgRentDepositMonths,
     },
 
-    // Location insight explanations
     bachelorInsight: result.locationInsight.bachelorInsight,
     mobilityExplanation: result.locationInsight.mobility.explanation,
     liquidityExplanation: result.locationInsight.liquidity.explanation,
