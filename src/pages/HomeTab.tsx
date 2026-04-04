@@ -11,7 +11,7 @@ const features = [
     id: 'rent' as TabId,
     icon: Home,
     title: 'Rent Analysis',
-    description: 'Affordability check, expense breakdown & investment tracker',
+    description: 'Affordability check & expense breakdown',
     color: 'bg-blue-500/10 text-blue-500',
     borderColor: 'border-blue-500/20 hover:border-blue-500/40',
   },
