@@ -7,7 +7,7 @@ import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateRent, hasBlockingErrors } from '@/lib/validation';
-import { Wallet, TrendingUp, Receipt, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react';
+import { Wallet, Receipt, ChevronDown, ChevronUp, ArrowRight, AlertCircle } from 'lucide-react';
 import type { TabId } from '@/components/BottomNav';
 
 interface RentTabProps {
