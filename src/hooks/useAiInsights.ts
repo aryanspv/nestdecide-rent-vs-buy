@@ -14,9 +14,11 @@ export interface AiInsights {
 
 function buildSummary(result: CalculationResult, inputs: UserInputs) {
   const staySnap = result.snapshots[Math.min(inputs.plannedStay, 30) - 1];
+  const cityData = getCityData(inputs.city);
   return {
     // All user inputs
     city: inputs.city,
+    cityLabel: cityData.label,
     locality: inputs.locality || 'not specified',
     userProfile: inputs.userProfile,
     propertyType: inputs.propertyType,
