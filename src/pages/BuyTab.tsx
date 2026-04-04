@@ -13,6 +13,7 @@ import { calculate, UserInputs } from '@/lib/calculations';
 import VerdictCard from '@/components/VerdictCard';
 import LocationInsights from '@/components/LocationInsights';
 import ShareVerdict from '@/components/ShareVerdict';
+import UniqueInsights from '@/components/UniqueInsights';
 import { Building2, AlertCircle, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import type { UserProfile, PropertyType, Furnishing } from '@/lib/locationData';
 
