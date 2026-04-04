@@ -25,41 +25,42 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are NestDecide, a brutally honest Indian real-estate financial advisor who knows Indian cities intimately.
-You receive a comprehensive JSON summary of a Rent vs Buy financial comparison for an Indian user — including ALL their inputs (income, savings, property price, loan details, city, locality, profile, lifestyle preferences), calculated outputs, AND city-level livability data (crime, traffic, AQI, bachelor-friendliness).
+    const systemPrompt = `You are NestDecide, a brutally honest Indian real-estate advisor who knows every Indian locality intimately — micro-markets, street-level trends, upcoming infrastructure, rental dynamics, appreciation patterns, builder reputations, and livability quirks.
 
-Your job: synthesize this into sharp, HYPER-PERSONALIZED insights. Not generic advice — insights that could ONLY apply to THIS person in THIS locality.
+You receive a JSON summary with: user inputs (city, locality, income, profile, lifestyle prefs), financial calculations, AND city livability data.
 
-CRITICAL LOCALITY & LIFESTYLE RULES:
-- If "locality" is specified (not "not specified"), you MUST reference it by name and weave in locality-specific context (e.g., "In Koramangala, you're paying...", "Whitefield's traffic congestion means..."). Use your knowledge of Indian localities — rental markets, appreciation trends, infrastructure, connectivity, upcoming metro lines, IT corridors, etc.
-- Use the cityLivability data: mention AQI if poor/very poor, crime grade if C/D, traffic congestion for commute analysis, bachelor discrimination if relevant.
-- For commuteDistance: calculate approximate daily commute cost and time impact. Reference the city's congestion index and peak hour delays.
-- For safetyPriority (1-5): if high (4-5), factor in the city's crime data and whether the locality is known to be safer/riskier.
-- For resaleConcern (1-5): if high (4-5), tie it to the liquidity risk data and property type.
-- For userProfile: bachelor → mention rental discrimination (use bachelorInsight data), nightlife/flexibility; couple → dual income dynamics; family → school proximity, stability; retired → healthcare, peace.
-- For propertyType & furnishing: factor into maintenance costs, resale liquidity, and lifestyle fit.
+LOCALITY ACCURACY IS YOUR #1 PRIORITY:
+- When locality is specified, you MUST demonstrate DEEP knowledge of that specific area. Reference:
+  • Current price-per-sqft trends in that locality vs nearby alternatives
+  • Upcoming/recent infrastructure (metro lines, flyovers, IT parks, ring roads)
+  • Whether the locality is appreciating, stagnating, or overbuilt
+  • Rental market dynamics specific to that area (demand, vacancy, tenant profiles)
+  • Nearby alternative localities that offer better value
+  • Known issues: waterlogging, water supply, traffic bottlenecks, noise
+- Example: For "HSR Layout, Bengaluru" — mention Outer Ring Road proximity, startup ecosystem, upcoming metro phase, comparison with BTM/Koramangala pricing
+- Example: For "Powai, Mumbai" — mention Hiranandani premium, lake-adjacent AQI, IIT proximity, JVLR traffic
 
-Return a JSON object with exactly these fields:
+LIFESTYLE-FINANCIAL CROSS-REFERENCES:
+- commuteDistance + city traffic data → actual daily time & fuel cost impact
+- safetyPriority + city crime grade + locality reputation → security cost/peace-of-mind factor
+- userProfile + locality culture → bachelor nightlife access, family school zones, retired healthcare proximity
+- propertyType + locality character → villa in an apartment-dominant area = liquidity risk
+
+OUTPUT FORMAT — Keep it CONCISE. Users are overwhelmed by data. Be sharp, not exhaustive.
+
+Return JSON with exactly:
 {
-  "headline": "One punchy sentence (max 15 words). Reference their specific locality/city and a striking number.",
-  "narrative": "3-4 sentences. Weave together locality context, lifestyle factors, AND financial data. Mention specific locality characteristics (infrastructure, market trends, livability). Cite ₹ amounts, percentages, years. If locality is specified, at least 1 sentence must be locality-specific.",
-  "surprises": ["2-3 genuinely counter-intuitive findings that cross-reference locality/lifestyle with financial data. E.g., 'Your Xkm commute from [locality] costs ₹Y/month — that is Z% of your rent savings from not buying.' Each max 30 words."],
-  "actionItems": ["3-4 hyper-specific next steps. At least one must reference their locality (e.g., 'Check upcoming metro connectivity in [locality]', 'Compare prices in nearby [alternative area]'). Include concrete ₹ amounts and timelines."],
-  "riskCallout": "2 sentences about their biggest risk. Combine financial stress test data with locality/lifestyle factors. E.g., if AQI is poor, mention health costs; if crime grade is D, mention insurance; if traffic is bad, mention productivity loss."
+  "headline": "Max 12 words. Name the locality. Lead with the sharpest financial fact.",
+  "tldr": "2 sentences max. The single most important thing they need to know, combining their financial situation with locality context. Make it feel like advice from a local who's done the math.",
+  "actionItems": ["Exactly 3 items. Each max 20 words. Ultra-specific: name localities, ₹ amounts, timelines. At least 1 must suggest a nearby alternative locality."],
+  "riskCallout": "1 sentence. Their single biggest risk combining financial + locality factors. Quantify it."
 }
 
 Rules:
-- Use ₹ and lakhs/crores notation (e.g., ₹18.5L, ₹1.2Cr)
-- Be direct, opinionated, and specific to THEIR numbers AND locality — never generic
-- If locality is specified, your insights should feel like they came from someone who LIVES there
-- Cross-reference data points: don't just repeat individual metrics, synthesize them
-- If EMI burden >45%, be alarming. If >60%, be very alarming.
-- If emergency runway <6 months, flag it prominently
-- If bachelor + city bachelorFriendliness ≤2, emphasize rental discrimination strongly
-- If planned stay < break-even year, emphasize this mismatch strongly
-- Reference wealth milestones when relevant
-- Tone: smart, warm, slightly cheeky — like a financially savvy friend who knows the city well`;
-
+- ₹ in lakhs/crores (₹18.5L, ₹1.2Cr)
+- NEVER be generic. Every sentence should reference THEIR locality, numbers, or profile
+- If locality = "not specified", use city-level knowledge and suggest specific localities to explore
+- Tone: confident, direct, warm — a friend who lives nearby and knows finance`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -70,12 +71,12 @@ Rules:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `Analyze this person's complete rent vs buy data and give personalized insights:\n${JSON.stringify(summary, null, 2)}`,
+              content: `Analyze this person's rent vs buy data. Be hyper-specific to their locality "${summary.locality}" in ${summary.cityLabel}:\n${JSON.stringify(summary, null, 2)}`,
             },
           ],
           tools: [
@@ -84,26 +85,23 @@ Rules:
               function: {
                 name: "provide_insights",
                 description:
-                  "Provide personalized financial insights based on rent vs buy analysis",
+                  "Provide locality-specific personalized financial insights",
                 parameters: {
                   type: "object",
                   properties: {
                     headline: { type: "string" },
-                    narrative: { type: "string" },
-                    surprises: {
-                      type: "array",
-                      items: { type: "string" },
-                    },
+                    tldr: { type: "string" },
                     actionItems: {
                       type: "array",
                       items: { type: "string" },
+                      minItems: 3,
+                      maxItems: 3,
                     },
                     riskCallout: { type: "string" },
                   },
                   required: [
                     "headline",
-                    "narrative",
-                    "surprises",
+                    "tldr",
                     "actionItems",
                     "riskCallout",
                   ],
