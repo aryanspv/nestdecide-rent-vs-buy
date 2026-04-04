@@ -16,7 +16,9 @@ const CITIES = Object.entries(CITY_DATA).map(([value, data]) => ({
   appreciation: `${data.avgAppreciationRange[0]}–${data.avgAppreciationRange[1]}%`,
 }));
 
-const DEFAULT_INPUTS: UserInputs = {
+type FormInputs = Omit<UserInputs, 'investmentReturn'>;
+
+const DEFAULT_INPUTS: FormInputs = {
   city: 'bengaluru',
   monthlyRent: 30000,
   monthlyIncome: 150000,
@@ -28,9 +30,7 @@ const DEFAULT_INPUTS: UserInputs = {
   monthlyMaintenance: 5000,
   plannedStay: 7,
   propertyAppreciation: 6,
-  investmentReturn: 12,
   annualRentIncrease: 8,
-  // New defaults
   locality: '',
   propertyType: 'apartment',
   furnishing: 'semi_furnished',
@@ -135,14 +135,14 @@ const STEPS = [
   { title: 'Your Situation', icon: Wallet, description: 'Income, rent & savings' },
   { title: 'The Property', icon: Building2, description: 'Price, loan & costs' },
   { title: 'Location & You', icon: MapPin, description: 'Area, lifestyle & profile' },
-  { title: 'Assumptions', icon: Settings2, description: 'Appreciation & returns' },
+  { title: 'Assumptions', icon: Settings2, description: 'Appreciation & rent growth' },
 ];
 
 export default function InputForm({ onCalculate }: InputFormProps) {
   const [step, setStep] = useState(0);
-  const [inputs, setInputs] = useState<UserInputs>(DEFAULT_INPUTS);
+  const [inputs, setInputs] = useState<FormInputs>(DEFAULT_INPUTS);
 
-  const update = (field: keyof UserInputs, value: number | string) => {
+  const update = (field: keyof FormInputs, value: number | string) => {
     setInputs(prev => ({ ...prev, [field]: value }));
   };
 
@@ -152,7 +152,7 @@ export default function InputForm({ onCalculate }: InputFormProps) {
   const stampDutyHint = `Stamp duty: ${cityData.stampDutyPct}% + Registration: ${cityData.registrationPct}% = ₹${((inputs.propertyPrice * (cityData.stampDutyPct + cityData.registrationPct)) / 100 / 100000).toFixed(1)}L extra`;
 
   const handleSubmit = () => {
-    onCalculate(inputs);
+    onCalculate({ ...inputs, investmentReturn: 12 });
   };
 
   const lastStep = STEPS.length - 1;

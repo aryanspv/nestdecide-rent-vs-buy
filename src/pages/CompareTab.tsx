@@ -61,7 +61,6 @@ export default function CompareTab() {
     monthlyMaintenance: 5000,
     plannedStay: 7,
     propertyAppreciation: 6,
-    investmentReturn: 12,
     annualRentIncrease: 8,
     locality: '',
     propertyType: 'apartment' as UserInputs['propertyType'],
@@ -88,6 +87,7 @@ export default function CompareTab() {
     monthlyIncome: shared.monthlyIncome,
     savings: shared.savings,
     ...localInputs,
+    investmentReturn: 12,
   };
 
   const errors = validateCompare({
