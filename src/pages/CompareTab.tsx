@@ -1,23 +1,17 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CurrencyInput, PercentInput } from '@/components/FormField';
 import CitySelector from '@/components/CitySelector';
 import { CITY_DATA } from '@/lib/locationData';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import NetWorthChart from '@/components/NetWorthChart';
-import VerdictCard from '@/components/VerdictCard';
-import HonestBreakdown from '@/components/HonestBreakdown';
 import { calculate, UserInputs } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import LocationInsights from '@/components/LocationInsights';
-import ShareVerdict from '@/components/ShareVerdict';
-import UniqueInsights from '@/components/UniqueInsights';
+import StoryResult from '@/components/StoryResult';
 import { Input } from '@/components/ui/input';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateCompare, hasBlockingErrors } from '@/lib/validation';
-import { GitCompareArrows, ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
-
+import { ChevronDown, ChevronUp, Zap, AlertCircle } from 'lucide-react';
 const PROFILE_OPTIONS = [
   { value: 'bachelor', label: 'Bachelor' },
   { value: 'couple', label: 'Couple' },
