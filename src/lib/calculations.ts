@@ -144,7 +144,7 @@ export interface CalculationResult {
   totalTaxBenefit: number;
   plannedStay: number;
 
-  // New: hidden costs
+  // Hidden costs
   stampDutyCost: number;
   registrationCost: number;
   brokerageBuyCost: number;
@@ -155,13 +155,16 @@ export interface CalculationResult {
   rentalDepositOpportunityCost: number;
   brokerageRentCost: number;
 
-  // New: location intelligence
+  // Location intelligence
   locationInsight: LocationInsight;
 
-  // New: combined verdict
+  // Verdicts
   financialVerdict: 'BUY' | 'RENT' | 'NEUTRAL';
   overallVerdict: 'BUY' | 'RENT' | 'NEUTRAL';
   verdictReasons: string[];
+
+  // Unique insights
+  uniqueInsights: UniqueInsights;
 }
 
 function calculateEMI(principal: number, annualRate: number, tenureYears: number): number {
