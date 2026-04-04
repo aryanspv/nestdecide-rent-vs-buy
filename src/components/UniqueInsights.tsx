@@ -46,7 +46,7 @@ function RiskBadge({ level }: { level: 'safe' | 'stretched' | 'danger' }) {
 }
 
 export default function UniqueInsights({ result }: UniqueInsightsProps) {
-  const { stressTest, rentTrapYear, freedomMoney, milestones, landlordRisk, opportunityCostPerMonth } = result.uniqueInsights;
+  const { stressTest, rentTrapYear, freedomMoney, milestones, landlordRisk } = result.uniqueInsights;
 
   const reachableMilestones = milestones.filter(m => m.buyYear !== null || m.rentYear !== null);
 
