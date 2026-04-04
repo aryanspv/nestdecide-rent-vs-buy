@@ -42,7 +42,6 @@ export default function RentTab({ onNavigate }: RentTabProps) {
   const shared = useUserData();
   const [local, setLocal] = useState<RentLocalState>({
     annualRentIncrease: 8,
-    investmentReturn: 12,
     years: 10,
   });
   const [showResults, setShowResults] = useState(false);
