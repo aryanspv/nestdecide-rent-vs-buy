@@ -18,13 +18,11 @@ export default function ScenarioTabs({ inputs }: ScenarioTabsProps) {
     pessimistic: calculate({
       ...inputs,
       propertyAppreciation: inputs.propertyAppreciation - 2,
-      investmentReturn: inputs.investmentReturn + 2,
     }),
     realistic: calculate(inputs),
     optimistic: calculate({
       ...inputs,
       propertyAppreciation: inputs.propertyAppreciation + 2,
-      investmentReturn: inputs.investmentReturn - 2,
     }),
   };
 
