@@ -13,13 +13,18 @@ interface NotifPrefs {
   tips: boolean;
 }
 
+const STORAGE_KEY = 'nestdecide_notif_prefs';
+
+function loadPrefs(): NotifPrefs {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { marketUpdates: true, rateChanges: true, cityAlerts: false, tips: true };
+}
+
 export default function NotificationsPage({ onBack }: NotificationsPageProps) {
-  const [prefs, setPrefs] = useState<NotifPrefs>({
-    marketUpdates: true,
-    rateChanges: true,
-    cityAlerts: false,
-    tips: true,
-  });
+  const [prefs, setPrefs] = useState<NotifPrefs>(loadPrefs);
 
   const toggle = (key: keyof NotifPrefs) =>
     setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
