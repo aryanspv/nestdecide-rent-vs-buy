@@ -388,6 +388,61 @@ function buildPromptAnalysis(summary: any) {
   };
 }
 
+type LocalityMode = "prestige_core" | "value_fringe" | "value_dense" | "convenience";
+
+function getProfileEvidenceText(profile?: any) {
+  return cleanSentence([
+    profile?.zone,
+    profile?.vibe,
+    profile?.summary,
+    ...(profile?.infraCatalysts ?? []),
+    ...(profile?.risks ?? []),
+  ].filter(Boolean).join(" ")).toLowerCase();
+}
+
+function getLocalityMode(summary: any, profile?: any): LocalityMode {
+  const evidence = getProfileEvidenceText(profile);
+
+  if (profile?.segment === "ultra_luxury") {
+    return "prestige_core";
+  }
+
+  if (
+    profile?.priceToRentPressure === "very_high" &&
+    /(central|diplomat|institutional|scarcity|estate|enclave|legacy|trophy|leafy)/.test(evidence)
+  ) {
+    return "prestige_core";
+  }
+
+  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
+    if (/(fringe|peripheral|road-led|road led|unauthorized|title|legal|approach road|last-mile|last mile|spillover demand|burari|mukundpur|sant nagar)/.test(evidence)) {
+      return "value_fringe";
+    }
+
+    return "value_dense";
+  }
+
+  return "convenience";
+}
+
+function getRiskMentions(profile?: any) {
+  const risks = Array.isArray(profile?.risks)
+    ? profile.risks.map((risk: string) => cleanSentence(risk)).filter(Boolean)
+    : [];
+
+  return risks.length > 0 ? risks : [`${getRiskTheme(profile)} risk`];
+}
+
+function getBreakEvenLabel(summary: any) {
+  return summary?.breakEvenYear ? `year ${summary.breakEvenYear}` : "the break-even point";
+}
+
+function shouldShortCircuitAi(summary: any, profile?: any) {
+  if (!profile?.canonicalName) return false;
+  const mode = getLocalityMode(summary, profile);
+  return mode === "prestige_core" || mode === "value_fringe";
+}
+
 function formatCompactInr(value?: number) {
   if (!Number.isFinite(value)) return "₹0";
 
@@ -409,17 +464,21 @@ function formatCompactInr(value?: number) {
 
 function buildLocalityHeadline(summary: any, profile: any) {
   const localityName = pickLocalityName(summary, profile);
-  const riskTheme = getRiskTheme(profile);
+  const mode = getLocalityMode(summary, profile);
 
-  if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
-    return `${localityName}: status premium burns ${summary?.netWorthDiffFormatted ?? "value"}.`;
+  if (mode === "prestige_core") {
+    return `${localityName}: legacy address, brutal ownership drag.`;
   }
 
-  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
-    return `${localityName}: low entry hides ${riskTheme} and exit risk.`;
+  if (mode === "value_fringe") {
+    return `${localityName}: cheap entry, expensive exit mistakes.`;
   }
 
-  return `${localityName}: locality premium still trails renting.`;
+  if (mode === "value_dense") {
+    return `${localityName}: value buy only if the block works.`;
+  }
+
+  return `${localityName}: convenience premium still trails renting.`;
 }
 
 function buildLocalityTldr(summary: any, profile: any) {
@@ -428,32 +487,49 @@ function buildLocalityTldr(summary: any, profile: any) {
   const priceText = formatCompactInr(summary?.propertyPrice);
   const alternative = profile?.betterValueAlternatives?.[0];
   const stay = `${summary?.plannedStay ?? "short"}-year`;
-  const riskTheme = getRiskTheme(profile);
+  const pressure = humanize(profile?.priceToRentPressure) || "high";
+  const [primaryRisk, secondaryRisk] = getRiskMentions(profile);
+  const demandAnchor = cleanSentence(profile?.dominantTenantProfile ?? "high-end tenant demand");
+  const mode = getLocalityMode(summary, profile);
 
-  if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
+  if (mode === "prestige_core") {
     return cleanSentence(
-      `${localityName} is a prestige-heavy pocket in ${zone}, so a ${priceText} buy for a ${stay} stay mainly pays for address value, not return. Scarcity and safety may be real, but yield compression is so severe that ${alternative ? `${alternative} is the smarter benchmark before you buy.` : `renting stays cleaner financially.`}`
+      `For a ${stay} stay, ${localityName} behaves like a prestige purchase, not a compounding asset. ${zone} scarcity, ${demandAnchor} demand and ${pressure} buy-vs-rent pressure make the ${priceText} ticket behave like an address premium${alternative ? `, so benchmark ${alternative} before buying.` : "."}`
     );
   }
 
-  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
+  if (mode === "value_fringe") {
     return cleanSentence(
-      `${localityName} is an affordability-led pocket in ${zone}, so a ${priceText} buy only works if the exact block is legally clean, liveable and resaleable. The low ticket still hides ${riskTheme}, congestion and weaker exit depth for a ${stay} hold${alternative ? `, so compare ${alternative} too.` : "."}`
+      `For a ${stay} stay, ${localityName} is only buyable if the exact lane, title chain and building quality are solid. ${zone} affordability helps, but ${primaryRisk}, ${secondaryRisk ?? "road-led commute friction"} and ${profile?.liquidity === "weaker" ? "weak resale depth" : "patchy exits"} can trap a ${priceText} buyer${alternative ? `, so compare ${alternative} too.` : "."}`
+    );
+  }
+
+  if (mode === "value_dense") {
+    return cleanSentence(
+      `For a ${stay} stay, ${localityName} is a building-by-building decision, not a blanket value buy. ${zone} pricing helps, but ${primaryRisk}, ${secondaryRisk ?? "older stock"} and ${profile?.liquidity === "strong" ? "priced-in exit expectations" : "uneven resale depth"} mean the exact block matters more than the pin code${alternative ? `, so benchmark ${alternative}.` : "."}`
     );
   }
 
   return cleanSentence(
-    `${localityName} carries a real convenience premium in ${zone}, so the buy case only works if livability and future demand beat the cost of waiting. Right now that locality premium still looks richer than the financial payoff${alternative ? `, so benchmark ${alternative} before committing.` : "."}`
+    `For a ${stay} stay, ${localityName} only works if convenience and demand outrun the buy premium. ${zone} livability is real, but ${pressure} pricing, ${primaryRisk} and ${profile?.liquidity === "strong" ? "already-priced-in exit quality" : "exit risk"} still make renting the cleaner baseline${alternative ? ` versus ${alternative}.` : "."}`
   );
 }
 
 function buildLocalityRiskCallout(summary: any, profile: any) {
   const localityName = pickLocalityName(summary, profile);
-  const risks = listToText(profile?.risks, 2);
+  const [primaryRisk, secondaryRisk] = getRiskMentions(profile);
+  const mode = getLocalityMode(summary, profile);
+  const breakEven = getBreakEvenLabel(summary);
 
-  if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
+  if (mode === "prestige_core") {
     return cleanSentence(
-      `${localityName} asks you to carry ${formatCompactInr(summary?.monthlyEmi)} of EMI plus ${formatCompactInr(summary?.totalTransactionCost)} upfront largely for prestige, which is punishing if you exit before year ${summary?.breakEvenYear ?? "the break-even point"}.`
+      `${formatCompactInr(summary?.monthlyEmi)} EMI plus ${formatCompactInr(summary?.totalTransactionCost)} upfront is hard to recover before ${breakEven}; ${localityName} punishes short holds because yield stays thin even when prestige demand is real.`
+    );
+  }
+
+  if (mode === "value_fringe") {
+    return cleanSentence(
+      `${breakEven} is a long payback for ${localityName}; ${formatCompactInr(summary?.monthlyEmi)} of EMI can become a trapped position if ${primaryRisk}, ${secondaryRisk ?? "road-led friction"} or weak resale depth force an early exit.`
     );
   }
 
@@ -469,9 +545,9 @@ function buildLocalityRiskCallout(summary: any, profile: any) {
     );
   }
 
-  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
+  if (mode === "value_dense") {
     return cleanSentence(
-      `${localityName} can trap buyers with cheap-looking entry pricing because ${risks || "stock quality and resale depth"} can still make a ${formatCompactInr(summary?.monthlyEmi)} EMI expensive to unwind.`
+      `${localityName} can make a ${formatCompactInr(summary?.monthlyEmi)} EMI expensive to unwind because ${primaryRisk} and uneven resale depth usually surface when you need to exit.`
     );
   }
 
@@ -482,30 +558,39 @@ function buildLocalityRiskCallout(summary: any, profile: any) {
 
 function buildLocalityActionItems(summary: any, profile: any) {
   const localityName = pickLocalityName(summary, profile);
-  const alternative = profile?.betterValueAlternatives?.[0] || "a nearby pocket";
+  const alternative = profile?.betterValueAlternatives?.[0] || "a nearby planned pocket";
+  const mode = getLocalityMode(summary, profile);
+  const breakEven = getBreakEvenLabel(summary);
+  const priceText = formatCompactInr(summary?.propertyPrice);
 
-  if (profile?.segment === "ultra_luxury" || profile?.priceToRentPressure === "very_high") {
+  if (mode === "prestige_core") {
     return [
-      `Benchmark ${localityName} against ${alternative} to price the prestige premium honestly.`,
-      `Demand recent yield and resale comps before paying ${formatCompactInr(summary?.propertyPrice)} here.`,
-      `Only buy if you can hold past year ${summary?.breakEvenYear ?? "the break-even point"} and absorb ${formatCompactInr(summary?.emiIfRatePlus2)}.`
+      `Price ${localityName} against ${alternative} to isolate the pure address premium.`,
+      `Demand rental yield, resale and carrying-cost comps before paying ${priceText}.`,
+      `Only buy if you can hold past ${breakEven} and absorb ${formatCompactInr(summary?.emiIfRatePlus2)}.`
     ];
   }
 
-  if (profile?.segment === "affordable" || profile?.segment === "mid_market") {
+  if (mode === "value_fringe") {
     return [
-      `Inspect ${localityName} lane by lane; block quality matters more than area averages.`,
-      `Compare the exact building against options in ${alternative} before committing.`,
-      `Only buy if the best block still works beyond year ${summary?.breakEvenYear ?? "the break-even point"}.`
+      `Verify title chain, registry history and building paperwork in ${localityName}.`,
+      `Walk the exact lane at rush hour and after rain; road-led friction is real.`,
+      `Compare best-block resale odds in ${localityName} versus ${alternative}.`
+    ];
+  }
+
+  if (mode === "value_dense") {
+    return [
+      `Inspect the exact building, not just the area average, in ${localityName}.`,
+      `Price maintenance, retrofit and resale risk against options in ${alternative}.`,
+      `Only buy if the exact unit still works beyond ${breakEven}.`
     ];
   }
 
   return [
-    `Benchmark ${localityName} against ${alternative} before paying a ${humanize(profile?.priceToRentPressure)} micro-market premium.`,
-    `Only buy if you will stay past year ${summary?.breakEvenYear ?? "the break-even point"} and can absorb ${formatCompactInr(summary?.emiIfRatePlus2)} under rate stress.`,
-    profile?.segment === "affordable" || profile?.segment === "mid_market"
-      ? `Audit building quality lane by lane in ${localityName}; stock quality matters more than area averages.`
-      : `Negotiate hard in ${localityName}; prestige only works if yield and resale stay strong.`,
+    `Benchmark ${localityName} against ${alternative} before paying the micro-market premium.`,
+    `Check renter demand, exit depth and stressed EMI of ${formatCompactInr(summary?.emiIfRatePlus2)}.`,
+    `Only buy if your stay comfortably clears ${breakEven}.`,
   ];
 }
 
@@ -615,6 +700,19 @@ serve(async (req) => {
     }
 
     const enrichedSummary = enrichSummaryWithLocalityProfile(summary);
+    const deterministicInsights = buildFallbackInsights(enrichedSummary);
+    const localityMode = getLocalityMode(enrichedSummary, enrichedSummary.localityProfile);
+
+    if (shouldShortCircuitAi(enrichedSummary, enrichedSummary.localityProfile)) {
+      console.log(
+        `Using deterministic locality insights for ${pickLocalityName(enrichedSummary, enrichedSummary.localityProfile)} (${localityMode})`
+      );
+
+      return new Response(JSON.stringify(deterministicInsights), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const promptAnalysis = buildPromptAnalysis(enrichedSummary);
 
     const systemPrompt = `You are NestDecide's lead Indian residential micro-market analyst.
@@ -744,8 +842,7 @@ Rules:
 
     if (!response || !response.ok) {
       console.error("All models failed, using fallback insights");
-      const fallback = buildFallbackInsights(enrichedSummary);
-      return new Response(JSON.stringify(fallback), {
+      return new Response(JSON.stringify(deterministicInsights), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
