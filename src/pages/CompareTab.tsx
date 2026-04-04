@@ -68,7 +68,7 @@ export default function CompareTab() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hasCalculated, setHasCalculated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const verdictRef = useRef<HTMLDivElement>(null);
+  
 
   const updateLocal = <K extends keyof typeof localInputs>(key: K, val: (typeof localInputs)[K]) =>
     setLocalInputs(prev => ({ ...prev, [key]: val }));
