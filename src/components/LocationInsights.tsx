@@ -33,6 +33,12 @@ function InsightCard({ icon: Icon, title, children, accent }: {
 
 export default function LocationInsights({ result }: LocationInsightsProps) {
   const { locationInsight: li } = result;
+  const cityData = getCityData(result.locationInsight.rentalYield.cityAvgYield > 0 ? '' : ''); // We need city key
+  // Get city data from the result's city reference
+  const cityKey = Object.keys(require('@/lib/locationData').CITY_DATA).find(
+    k => require('@/lib/locationData').CITY_DATA[k].avgRentalYieldPct === li.rentalYield.cityAvgYield
+  ) ?? 'other';
+  const cd = getCityData(cityKey);
 
   const scoreColor = li.locationScore >= 60
     ? 'hsl(var(--signal-buy))'
