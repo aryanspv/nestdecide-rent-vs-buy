@@ -11,7 +11,7 @@ const features = [
     id: 'rent' as TabId,
     icon: Home,
     title: 'Rent Analysis',
-    description: 'Affordability check, expense breakdown & investment tracker',
+    description: 'Affordability check & expense breakdown',
     color: 'bg-blue-500/10 text-blue-500',
     borderColor: 'border-blue-500/20 hover:border-blue-500/40',
   },
@@ -110,7 +110,7 @@ export default function HomeTab({ onNavigate }: HomeTabProps) {
       >
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Did you know?</p>
         <p className="text-sm text-foreground leading-relaxed">
-          In most Indian cities, renting + investing beats buying for stays under <span className="font-bold text-primary">5–7 years</span>. 
+          In most Indian cities, renting costs less than buying for stays under <span className="font-bold text-primary">5–7 years</span>. 
           But your city, lifestyle, and numbers matter — let's find out.
         </p>
       </motion.div>

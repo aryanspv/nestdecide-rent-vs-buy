@@ -93,9 +93,9 @@ export default function RentTab({ onNavigate }: RentTabProps) {
   };
 
   const verdictMessages = {
-    healthy: { title: 'Your rent is affordable ✅', desc: 'You have solid headroom to save and invest.' },
+    healthy: { title: 'Your rent is affordable ✅', desc: 'You have solid headroom to save each month.' },
     moderate: { title: 'Rent is manageable ⚠️', desc: 'You can sustain this, but savings may be tight in high-expense months.' },
-    stretched: { title: 'Rent is stretching your budget 🔴', desc: 'Consider downsizing or negotiating. Little room for investments.' },
+    stretched: { title: 'Rent is stretching your budget 🔴', desc: 'Consider downsizing or negotiating. Little room for savings.' },
   };
 
   const toggleSection = (id: string) => setExpandedSection(prev => prev === id ? null : id);
