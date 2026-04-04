@@ -76,9 +76,10 @@ Rules:
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `Analyze this person's rent vs buy data. Be hyper-specific to their locality "${summary.locality}" in ${summary.cityLabel}:\n${JSON.stringify(summary, null, 2)}`,
+              content: `Locality: ${summary.locality} in ${summary.cityLabel}\n\nStructured locality intelligence (if present, use this as source of truth):\n${JSON.stringify(summary.localityProfile ?? null, null, 2)}\n\nFull summary:\n${JSON.stringify(summary, null, 2)}`,
             },
           ],
+          temperature: 0.3,
           tools: [
             {
               type: "function",
