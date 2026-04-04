@@ -12,6 +12,7 @@ import { calculate, UserInputs } from '@/lib/calculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LocationInsights from '@/components/LocationInsights';
 import ShareVerdict from '@/components/ShareVerdict';
+import UniqueInsights from '@/components/UniqueInsights';
 import { Input } from '@/components/ui/input';
 import { useUserData } from '@/contexts/UserDataContext';
 import { validateCompare, hasBlockingErrors } from '@/lib/validation';
@@ -279,6 +280,7 @@ export default function CompareTab() {
           </div>
           <NetWorthChart snapshots={result.snapshots} plannedStay={localInputs.plannedStay} breakEvenYear={result.breakEvenYear} />
           <LocationInsights result={result} />
+          <UniqueInsights result={result} />
           <HonestBreakdown result={result} />
           <ShareVerdict targetRef={verdictRef} title="My NestDecide Comparison" />
           <div className="text-center pt-1">

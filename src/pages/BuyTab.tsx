@@ -13,6 +13,7 @@ import { calculate, UserInputs } from '@/lib/calculations';
 import VerdictCard from '@/components/VerdictCard';
 import LocationInsights from '@/components/LocationInsights';
 import ShareVerdict from '@/components/ShareVerdict';
+import UniqueInsights from '@/components/UniqueInsights';
 import { Building2, AlertCircle, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import type { UserProfile, PropertyType, Furnishing } from '@/lib/locationData';
 
@@ -281,6 +282,7 @@ export default function BuyTab() {
             <VerdictCard result={result} />
           </div>
           <LocationInsights result={result} />
+          <UniqueInsights result={result} />
           <ShareVerdict targetRef={verdictRef} title="My NestDecide Buy Analysis" />
           <div className="text-center pt-1">
             <button onClick={() => setHasCalculated(false)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">

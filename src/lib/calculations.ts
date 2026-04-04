@@ -50,6 +50,43 @@ export interface YearlySnapshot {
   totalRentPaid: number;
   totalEmiPaid: number;
   rentInvestmentCorpus: number;
+  // Real (inflation-adjusted) values
+  buyNetWorthReal: number;
+  rentNetWorthReal: number;
+}
+
+export interface StressTestResult {
+  emergencyRunwayMonths: number;
+  emiAtPlus1: number;
+  emiAtPlus2: number;
+  emiDeltaPlus1: number;
+  emiDeltaPlus2: number;
+  burdenPctCurrent: number;
+  burdenPctPlus1: number;
+  burdenPctPlus2: number;
+  riskLevel: 'safe' | 'stretched' | 'danger';
+}
+
+export interface WealthMilestone {
+  label: string;
+  amountLakhs: number;
+  buyYear: number | null;
+  rentYear: number | null;
+  fasterPath: 'buy' | 'rent' | 'tie';
+}
+
+export interface UniqueInsights {
+  stressTest: StressTestResult;
+  rentTrapYear: number | null; // year cumulative rent > transaction costs
+  freedomMoney: { buyer: number; renter: number; delta: number };
+  milestones: WealthMilestone[];
+  landlordRisk: {
+    protectionLevel: 'weak' | 'moderate' | 'strong';
+    score: number;
+    relocationFreqYears: number;
+    explanation: string;
+  };
+  opportunityCostPerMonth: number; // ₹ per month of indecision
 }
 
 export interface LocationInsight {
@@ -107,7 +144,7 @@ export interface CalculationResult {
   totalTaxBenefit: number;
   plannedStay: number;
 
-  // New: hidden costs
+  // Hidden costs
   stampDutyCost: number;
   registrationCost: number;
   brokerageBuyCost: number;
@@ -118,13 +155,16 @@ export interface CalculationResult {
   rentalDepositOpportunityCost: number;
   brokerageRentCost: number;
 
-  // New: location intelligence
+  // Location intelligence
   locationInsight: LocationInsight;
 
-  // New: combined verdict
+  // Verdicts
   financialVerdict: 'BUY' | 'RENT' | 'NEUTRAL';
   overallVerdict: 'BUY' | 'RENT' | 'NEUTRAL';
   verdictReasons: string[];
+
+  // Unique insights
+  uniqueInsights: UniqueInsights;
 }
 
 function calculateEMI(principal: number, annualRate: number, tenureYears: number): number {
@@ -365,6 +405,7 @@ export function calculate(inputs: UserInputs): CalculationResult {
 
     const rentNetWorth = rentInvestmentCorpus + rentalDepositLocked; // deposit is returned eventually
 
+    const inflationDeflator = Math.pow(1.06, year);
     snapshots.push({
       year,
       buyNetWorth,
@@ -375,6 +416,8 @@ export function calculate(inputs: UserInputs): CalculationResult {
       totalRentPaid,
       totalEmiPaid,
       rentInvestmentCorpus,
+      buyNetWorthReal: buyNetWorth / inflationDeflator,
+      rentNetWorthReal: rentNetWorth / inflationDeflator,
     });
 
     // Check crossover
@@ -440,6 +483,102 @@ export function calculate(inputs: UserInputs): CalculationResult {
   const totalTaxBenefit = (totalTax80C + totalTax24B) * 0.3;
   const rentalDepositOpportunityCost = locationInsight.hiddenRentCosts.depositOpportunityCost;
 
+  // ===== UNIQUE INSIGHTS =====
+
+  // 1. EMI Stress Test
+  const emiPlus1 = calculateEMI(loanAmount, inputs.interestRate + 1, inputs.loanTenure);
+  const emiPlus2 = calculateEMI(loanAmount, inputs.interestRate + 2, inputs.loanTenure);
+  const emergencyRunwayMonths = (emi + inputs.monthlyMaintenance) > 0
+    ? Math.floor(inputs.savings / (emi + inputs.monthlyMaintenance))
+    : 999;
+  const burdenCurrent = inputs.monthlyIncome > 0 ? (emi / inputs.monthlyIncome) * 100 : 0;
+  const burdenPlus1 = inputs.monthlyIncome > 0 ? (emiPlus1 / inputs.monthlyIncome) * 100 : 0;
+  const burdenPlus2 = inputs.monthlyIncome > 0 ? (emiPlus2 / inputs.monthlyIncome) * 100 : 0;
+  let stressRisk: StressTestResult['riskLevel'] = 'safe';
+  if (emergencyRunwayMonths < 3 || burdenCurrent > 50) stressRisk = 'danger';
+  else if (emergencyRunwayMonths < 6 || burdenCurrent > 40) stressRisk = 'stretched';
+
+  const stressTest: StressTestResult = {
+    emergencyRunwayMonths,
+    emiAtPlus1: emiPlus1,
+    emiAtPlus2: emiPlus2,
+    emiDeltaPlus1: emiPlus1 - emi,
+    emiDeltaPlus2: emiPlus2 - emi,
+    burdenPctCurrent: burdenCurrent,
+    burdenPctPlus1: burdenPlus1,
+    burdenPctPlus2: burdenPlus2,
+    riskLevel: stressRisk,
+  };
+
+  // 2. Rent Trap Detector
+  let rentTrapYear: number | null = null;
+  for (const snap of snapshots) {
+    if (snap.totalRentPaid > totalTransactionCost && rentTrapYear === null) {
+      rentTrapYear = snap.year;
+    }
+  }
+
+  // 3. Real values already added to snapshots above
+
+  // 4. Freedom Money (at year 1)
+  const buyerFreedom = inputs.monthlyIncome - emi - inputs.monthlyMaintenance
+    - (snapshots[0]?.propertyValue ?? inputs.propertyPrice) * cityData.propertyTaxPct / 100 / 12;
+  const renterFreedom = inputs.monthlyIncome - inputs.monthlyRent;
+  const freedomMoney = {
+    buyer: Math.round(buyerFreedom),
+    renter: Math.round(renterFreedom),
+    delta: Math.round(renterFreedom - buyerFreedom),
+  };
+
+  // 5. Wealth Milestones
+  const milestoneThresholds = [
+    { label: '₹25L', amountLakhs: 25 },
+    { label: '₹50L', amountLakhs: 50 },
+    { label: '₹1Cr', amountLakhs: 100 },
+    { label: '₹2Cr', amountLakhs: 200 },
+    { label: '₹5Cr', amountLakhs: 500 },
+  ];
+  const milestones: WealthMilestone[] = milestoneThresholds.map(m => {
+    const target = m.amountLakhs * 100000;
+    const buyYear = snapshots.find(s => s.buyNetWorth >= target)?.year ?? null;
+    const rentYear = snapshots.find(s => s.rentNetWorth >= target)?.year ?? null;
+    let fasterPath: 'buy' | 'rent' | 'tie' = 'tie';
+    if (buyYear !== null && rentYear !== null) {
+      fasterPath = buyYear < rentYear ? 'buy' : buyYear > rentYear ? 'rent' : 'tie';
+    } else if (buyYear !== null) fasterPath = 'buy';
+    else if (rentYear !== null) fasterPath = 'rent';
+    return { ...m, buyYear, rentYear, fasterPath };
+  });
+
+  // 6. Landlord Risk Score
+  const tpScore = cityData.tenantProtectionScore;
+  const protectionLevel: 'weak' | 'moderate' | 'strong' = tpScore >= 4 ? 'strong' : tpScore >= 3 ? 'moderate' : 'weak';
+  const landlordRisk = {
+    protectionLevel,
+    score: tpScore,
+    relocationFreqYears: cityData.avgRelocationFreqYears,
+    explanation: protectionLevel === 'strong'
+      ? `${cityData.label} has strong tenant protection laws. Forced evictions are rare.`
+      : protectionLevel === 'moderate'
+      ? `${cityData.label} has moderate tenant protection. Expect possible relocation every ~${cityData.avgRelocationFreqYears} years.`
+      : `${cityData.label} has weak tenant protection laws. Landlord-driven disruptions are common — budget for relocation every ~${cityData.avgRelocationFreqYears} years.`,
+  };
+
+  // 7. Opportunity Cost Clock
+  const staySnap = snapshots[stayIndex];
+  const opportunityCostPerMonth = staySnap
+    ? Math.abs(staySnap.buyNetWorth - staySnap.rentNetWorth) / (inputs.plannedStay * 12)
+    : 0;
+
+  const uniqueInsights: UniqueInsights = {
+    stressTest,
+    rentTrapYear,
+    freedomMoney,
+    milestones,
+    landlordRisk,
+    opportunityCostPerMonth,
+  };
+
   return {
     snapshots,
     breakEvenYear,
@@ -458,7 +597,6 @@ export function calculate(inputs: UserInputs): CalculationResult {
     totalTaxBenefit,
     plannedStay: inputs.plannedStay,
 
-    // Hidden costs
     stampDutyCost,
     registrationCost,
     brokerageBuyCost,
@@ -469,12 +607,12 @@ export function calculate(inputs: UserInputs): CalculationResult {
     rentalDepositOpportunityCost,
     brokerageRentCost,
 
-    // Location
     locationInsight,
 
-    // Verdicts
     financialVerdict,
     overallVerdict,
     verdictReasons,
+
+    uniqueInsights,
   };
 }

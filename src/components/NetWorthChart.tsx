@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { YearlySnapshot } from '@/lib/calculations';
-import { formatLakhs } from '@/lib/formatCurrency';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
 import { motion } from 'framer-motion';
+import { Switch } from '@/components/ui/switch';
 
 interface NetWorthChartProps {
   snapshots: YearlySnapshot[];
@@ -10,10 +11,12 @@ interface NetWorthChartProps {
 }
 
 export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }: NetWorthChartProps) {
+  const [showReal, setShowReal] = useState(false);
+
   const data = snapshots.map(s => ({
     year: s.year,
-    buy: Math.round(s.buyNetWorth / 100000),
-    rent: Math.round(s.rentNetWorth / 100000),
+    buy: Math.round((showReal ? s.buyNetWorthReal : s.buyNetWorth) / 100000),
+    rent: Math.round((showReal ? s.rentNetWorthReal : s.rentNetWorth) / 100000),
   }));
 
   const crossover = breakEvenYear ? data.find(d => d.year === breakEvenYear) : null;
@@ -25,8 +28,29 @@ export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }:
       transition={{ duration: 0.5, delay: 0.2 }}
       className="terminal-card p-6 md:p-8"
     >
-      <h3 className="text-lg font-bold text-foreground mb-1">Net Worth Trajectory</h3>
-      <p className="text-sm text-muted-foreground mb-6">30-year comparison: buying vs renting & investing</p>
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Net Worth Trajectory</h3>
+          <p className="text-sm text-muted-foreground mb-6">30-year comparison: buying vs renting & investing</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="text-xs text-muted-foreground cursor-pointer" htmlFor="real-toggle">
+            Today's ₹
+          </label>
+          <Switch
+            id="real-toggle"
+            checked={showReal}
+            onCheckedChange={setShowReal}
+            className="scale-75"
+          />
+        </div>
+      </div>
+
+      {showReal && (
+        <p className="text-xs text-amber-400/80 bg-amber-500/10 rounded-lg px-3 py-1.5 mb-4">
+          📉 Inflation-adjusted (6%/yr). These are values in today's purchasing power — the real picture most calculators hide.
+        </p>
+      )}
 
       <div className="h-[350px] md:h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -58,7 +82,7 @@ export default function NetWorthChart({ snapshots, plannedStay, breakEvenYear }:
                 if (!active || !payload?.length) return null;
                 return (
                   <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="text-xs font-bold text-foreground mb-2">Year {label}</p>
+                    <p className="text-xs font-bold text-foreground mb-2">Year {label}{showReal ? ' (today\'s ₹)' : ''}</p>
                     {payload.map((p: any) => (
                       <p key={p.dataKey} className="text-xs" style={{ color: p.color }}>
                         {p.dataKey === 'buy' ? 'If you buy' : 'If you rent'}: ₹{p.value}L
