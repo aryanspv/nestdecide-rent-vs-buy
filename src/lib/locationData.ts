@@ -15,6 +15,8 @@ export interface CityData {
   brokerageBuyPct: number; // buyer brokerage % of property price
   brokerageRentMonths: number; // rent brokerage in months of rent
   avgCommutePerKmMonthly: number; // ₹ per km per month (fuel/metro avg)
+  tenantProtectionScore: number; // 1-5 (5 = strong tenant protection laws)
+  avgRelocationFreqYears: number; // average years before landlord-driven relocation
 }
 
 export const CITY_DATA: Record<string, CityData> = {
